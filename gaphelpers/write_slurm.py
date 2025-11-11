@@ -232,7 +232,6 @@ if __name__ == "__main__":
         file_params["using_opt_adsorbate"] = True
         file_params["adsorbate_file"] = args.adsorbate
 
-   
     if file_params["using_opt_adsorbate"]:
         idx, formula, smiles = get_adsorbate_info(using_opt_adsorbate=True, adsorbate_file=args.adsorbate)
     else:

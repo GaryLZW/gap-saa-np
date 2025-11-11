@@ -46,6 +46,8 @@ import subprocess
 from rdkit2ase import rdkit2ase, ase2rdkit
 from mace.calculators import mace_mp
 from ase.optimize import BFGS
+import random
+from ase.cluster import Octahedron, wulff_construction
 
 
 def test_short_distance(structure, mindist=0.3):
@@ -726,6 +728,52 @@ def apply_constraints(atoms, **kwargs):
 
     atoms.set_constraint(cons)
 
+
+def get_surface_index(atoms, lattice_constant, set_tag=False):
+    """
+    Get indices for surface atoms of a metal nanoparticle based on maximum radius to centre of mass.
+    """
+    radius = [np.linalg.norm(np.asarray([atom.position - atoms.get_center_of_mass()])) for atom in atoms]
+    cutoff = np.max(radius) - lattice_constant / 2.0
+    surf_index = [atom.index for atom in atoms if radius[atom.index] > cutoff]
+
+    if set_tag:
+        for atom in atoms:
+            atom.tag = 1
+        for i in surf_index:
+            atoms[i].tag = 0
+
+    return surf_index
+def create_dilute_alloy_np(
+        parent_metal: str = "Cu",
+        dopant: str = "Ru",
+        lattice: str = "fcc",
+        lattice_constant=3.575,
+        surface_indices=[(1, 1, 1), (1, 1, 0), (1, 0, 0)],
+        surface_energies=[1.447, 1.660, 1.584],
+        size=150,
+        one_out_of_n=9,
+        randomseed=46867,
+):
+    """
+    Create a dilute alloy nanoparticle with a fixed concentration of dopant at the surface.
+
+    Parameters:
+    -----------
+    parent_metal: str. Element symbol of the parent metal.
+    lattice: str. Lattice type of the parent metal.
+    one_out_of_n: int. 1/n concentration of dopant on the surface.
+    """
+    atoms = wulff_construction(symbol=parent_metal, surfaces=surface_indices, energies=surface_energies,
+                               size=size, structure=lattice, latticeconstant=lattice_constant)
+    surf_i = get_surface_index(atoms, lattice_constant, set_tag=True)
+
+    random.seed(randomseed)
+    sample_index = random.sample(surf_i, int(len(surf_i) / one_out_of_n))
+    for i in sample_index:
+        atoms[i].symbol = dopant
+
+    return atoms
 
 def create_adsorbate_surface(
         mol,
