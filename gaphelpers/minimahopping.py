@@ -321,10 +321,9 @@ def check_slurm_completion(job_ids, timelimit=1200 * 60, sleep=60):
     return True
 
 
-def prepare_initial_config(mol, surface, file_name="structure.traj", iteration=0, peratomsigma=False, forcemask=True,
-                           submit=True, lattice_param=3.85, vacuum=30, code="aims", using_opt_surface=False,
-                           surface_file=None, using_opt_adsorbate=False, adsorbate_file=None, free_atom_e=None,
-                           path_to_workflow=None):
+def prepare_initial_config(parent_metal, dopant, lattice, surface_indices, surface_energies, size, one_out_of_n,
+                           peratomsigma=False, forcemask=True, submit=True, lattice_param=3.85, code="aims",
+                           free_atom_e=None, path_to_workflow=None):
     """
     When iteration step is 0, then single point DFT result is required.
     This function generates adsoprtion surface and submit DFT calculation.
@@ -335,22 +334,13 @@ def prepare_initial_config(mol, surface, file_name="structure.traj", iteration=0
     subprocess.run(["cp", "../restart_training_data.xyz", "./z_init/input_training_data_iter_0.xyz"])
     init_structs = []
     job_ids = []
-    calc = mace_mp(model="medium", dispersion=False, default_dtype="float64", device='cpu')
+    #calc = mace_mp(model="medium", dispersion=False, default_dtype="float64", device='cpu')
     for i in range(5):
-        if using_opt_surface:
-            if using_opt_adsorbate:
-                newadsorption = create_adsorbate_surface(mol,
-                                                         using_opt_surface=using_opt_surface, surface_file=surface_file,
-                                                         using_opt_adsorbate=using_opt_adsorbate,
-                                                         adsorbate_file=adsorbate_file, randseed=i * 50 + 1000)
-            else:
-                newadsorption = create_adsorbate_surface(mol, using_opt_surface=using_opt_surface,
-                                                         surface_file=surface_file, randseed=i * 50 + 1000)
-        else:
-            newadsorption = create_adsorbate_surface(mol, surface=surface, lattice_param=lattice_param, vacuum=vacuum,
-                                                     randseed=i * 50 + 1000)
 
-        init_structs.append(newadsorption.copy())
+        nanoparticle = create_dilute_alloy_np(parent_metal, dopant, lattice, lattice_param, surface_indices,
+                                              surface_energies, size, one_out_of_n, randomseed=i * 50 + 1000)
+
+        init_structs.append(nanoparticle.copy())
         # Add a minima optimized with MACE-MP-medium
         # opt_adsorption = newadsorption.copy()
         # cons0 = FixAtoms(indices=[atom.index for atom in opt_adsorption if atom.symbol not in ['C', 'H', 'O']])
@@ -386,9 +376,8 @@ def prepare_initial_config(mol, surface, file_name="structure.traj", iteration=0
         return True
 
 
-def prepare_isolated_atom(mol, surface, file_name="structure.traj", iteration=0, peratomsigma=False, forcemask=True,
-                          submit=True, lattice_param=3.85, vacuum=30, code="aims", using_opt_surface=False,
-                          surface_file=None, using_opt_adsorbate=False, adsorbate_file=None, path_to_workflow=None):
+def prepare_isolated_atom(parent_metal, dopant, lattice, surface_indices, surface_energies, size, one_out_of_n,
+                          forcemask=True, submit=True, lattice_param=3.85, code="aims", path_to_workflow=None):
     """
     When iteration step is 0, then single point DFT result is required.
     This function generates adsoprtion surface and submit DFT calculation.
@@ -398,19 +387,10 @@ def prepare_isolated_atom(mol, surface, file_name="structure.traj", iteration=0,
     Path(cwd + "/isolated-atom").mkdir(parents=True, exist_ok=True)
     job_ids = []
 
-    if using_opt_surface:
-        if using_opt_adsorbate:
-            newadsorption = create_adsorbate_surface(mol,
-                                                     using_opt_surface=using_opt_surface, surface_file=surface_file,
-                                                     using_opt_adsorbate=using_opt_adsorbate,
-                                                     adsorbate_file=adsorbate_file)
-        else:
-            newadsorption = create_adsorbate_surface(mol, using_opt_surface=using_opt_surface,
-                                                     surface_file=surface_file)
-    else:
-        newadsorption = create_adsorbate_surface(mol, surface=surface, lattice_param=lattice_param, vacuum=vacuum)
+    nanoparticle = create_dilute_alloy_np(parent_metal, dopant, lattice, lattice_param,
+                                          surface_indices, surface_energies, size, one_out_of_n)
 
-    elements = set(newadsorption.get_chemical_symbols())
+    elements = set(nanoparticle.get_chemical_symbols())
     ele_energy = {}
 
     for ele in elements:

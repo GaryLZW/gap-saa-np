@@ -7,9 +7,9 @@
 
 from ase.io import read, write
 import os, sys, pandas as pd, numpy as np, glob, pickle
-from shutil import copyfile, rmtree 
+from shutil import copyfile, rmtree
 #from gaphelpers.sample_training_set import sample_training_set, check_slurm_completion, prepare_initial_config
-from gaphelpers.gap_command import gap_fitting, get_validation, plot_accuracy 
+from gaphelpers.gap_command import gap_fitting, get_validation, plot_accuracy
 from gaphelpers.minimahopping import minimahopping, prepare_input, check_GAP_convergence, Run_parallel_minima_hopping, check_GAP_convergence_after_parallel_MH, sample_training_set, check_slurm_completion, prepare_initial_config, prepare_isolated_atom
 from gaphelpers.get_argparse import get_argparse
 from gaphelpers.encode import make_trainingset_file, parse_output
@@ -33,21 +33,21 @@ else:
     tmpdir = scratchfolder
 Path(tmpdir).mkdir(parents=True, exist_ok = True)
 
-file_params = {"using_opt_surface":False, 
-              "surface_file":None, 
-              "using_opt_adsorbate":False, 
-              "adsorbate_file":None}
-if os.path.exists(args.slab):
-    file_params["using_opt_surface"] = True
-    file_params["surface_file"] = args.slab
-if os.path.exists(args.adsorbate):
-    file_params["using_opt_adsorbate"] = True
-    file_params["adsorbate_file"] = args.adsorbate
+# file_params = {"using_opt_surface":False,
+#               "surface_file":None,
+#               "using_opt_adsorbate":False,
+#               "adsorbate_file":None}
+# if os.path.exists(args.slab):
+#     file_params["using_opt_surface"] = True
+#     file_params["surface_file"] = args.slab
+# if os.path.exists(args.adsorbate):
+#     file_params["using_opt_adsorbate"] = True
+#     file_params["adsorbate_file"] = args.adsorbate
 ################################
 
 # Automatic determination of starting iteration
 # if there's no proceeded training iteration
-#last_iter = sorted([fn for fn in next(os.walk(submitdir))[1] if fn.startswith("iter_")], key =lambda s:int(s.split("_")[1]))[-1] 
+#last_iter = sorted([fn for fn in next(os.walk(submitdir))[1] if fn.startswith("iter_")], key =lambda s:int(s.split("_")[1]))[-1]
 #last_iter = int(last_iter.split("_")[1])
 if len([fn for fn in next(os.walk(submitdir))[1] if fn.startswith("iter_")]) == 0:
     start_iter = int(args.iteration)
@@ -61,27 +61,34 @@ else:
     else:
         start_iter = int(args.iteration)
 
-
 if args.enditeration == None:
     end_iter = start_iter
 else:
     end_iter = int(args.enditeration)
 
+### This part sets the input params for building np ###
+
+np_params = {"parent_metal": "Cu",
+             "dopant": "Ru",
+             "lattice": "fcc",
+             "surface_indices": [(1, 1, 1), (1, 1, 0), (1, 0, 0)],
+             "surface_energies": [1.447, 1.660, 1.584],
+             "size": 150,
+             "one_out_of_n": 9}
 
 if args.quantum_espresso:
-    lattice_param, vacuum, code = 3.86, 16, "qe"
+    lattice_param, code = 3.6, "qe"
 else:
-    lattice_param, vacuum, code = 3.85, 30, "aims"
+    lattice_param, code = 3.575, "aims"
+###########################################################
 
-isolated_atom_energy = prepare_isolated_atom(args.minimahopping, surface=args.facet, forcemask=args.force_mask,
-                                             lattice_param=lattice_param, vacuum=vacuum, code=code,
-                                             **file_params, path_to_workflow=args.gaphelper)
+isolated_atom_energy = prepare_isolated_atom(**np_params, lattice_param=lattice_param, forcemask=args.force_mask,
+                                             code=code, path_to_workflow=args.gaphelper)
 
 if start_iter == 0 and not os.path.isfile(submitdir + "/input_training_data_iter_0.xyz"):
 
-    prepare_initial_config(args.minimahopping, surface = args.facet, forcemask = args.force_mask, 
-                           lattice_param=lattice_param, vacuum=vacuum, code=code, free_atom_e=isolated_atom_energy, 
-                           **file_params, path_to_workflow=args.gaphelper)
+    prepare_initial_config(**np_params, forcemask=args.force_mask, lattice_param=lattice_param, code=code,
+                           free_atom_e=isolated_atom_energy, path_to_workflow=args.gaphelper)
 
 if start_iter != 0 and os.path.isfile(submitdir + "/statistics.csv"):
     statistics = pd.read_csv(submitdir + "/statistics.csv", index_col=0).transpose().to_dict()
@@ -241,6 +248,6 @@ if not check_GAP_convergence_after_parallel_MH(args.minimahopping, submitdir, co
 #else:
 
 
-#cluster_sample(args.minimahopping, submitdir=submitdir, only_chemisorption=True,  code = code, free_atom_e=isolated_atom_energy, using_opt_adsorbate=file_params["using_opt_adsorbate"], adsorbate_file=args.adsorbate, path_to_workflow=args.gaphelper)	
-#cluster_sample(args.minimahopping, submitdir=submitdir, singlepoint = True, only_chemisorption=True,  code = code, free_atom_e=isolated_atom_energy, using_opt_adsorbate=file_params["using_opt_adsorbate"], adsorbate_file=args.adsorbate, path_to_workflow=args.gaphelper)	
+#cluster_sample(args.minimahopping, submitdir=submitdir, only_chemisorption=True,  code = code, free_atom_e=isolated_atom_energy, using_opt_adsorbate=file_params["using_opt_adsorbate"], adsorbate_file=args.adsorbate, path_to_workflow=args.gaphelper)
+#cluster_sample(args.minimahopping, submitdir=submitdir, singlepoint = True, only_chemisorption=True,  code = code, free_atom_e=isolated_atom_energy, using_opt_adsorbate=file_params["using_opt_adsorbate"], adsorbate_file=args.adsorbate, path_to_workflow=args.gaphelper)
 
