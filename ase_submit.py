@@ -31,8 +31,6 @@ def get_dft_args():
     return parser.parse_args()
 
 
-
-
 args = get_dft_args()
 
 file_params = {"using_opt_surface":False,
@@ -53,27 +51,18 @@ mpiexe = "time srun"
 #cpu_command = "--nodes=$SLURM_NNODES --ntasks=$SLURM_NTASKS -d mpirun"
 outfile = f"{args.submitdir}/stdout.log" if args.submitdir else "stdout.log"
 aims_command = "{} {}".format(mpiexe, aimsbin)
-sampling_density=0.019 #Sampling density for k points
+sampling_density = 0.019 #Sampling density for k points
 profile=AimsProfile(command=aims_command, default_species_directory=species_dir)
 
-dft_params = {"override_warning_libxc":".true.",
-              "xc":'libxc MGGA_X_MBEEF+GGA_C_PBE_SOL',
-              "spin":'none',
-              "relativistic":'atomic_zora scalar',
-              "sc_accuracy_forces":1e-4,
-              "sc_accuracy_etot":1e-5,
-              "sc_accuracy_eev":1e-3,
-              "sc_accuracy_rho":1e-4
+dft_params = {"override_warning_libxc": ".true.",
+              "xc": 'libxc MGGA_X_MBEEF+GGA_C_PBE_SOL',
+              "spin": 'none',
+              "relativistic": 'atomic_zora scalar',
+              "sc_accuracy_forces": 1e-4,
+              "sc_accuracy_etot": 1e-5,
+              "sc_accuracy_eev": 1e-3,
+              "sc_accuracy_rho": 1e-4
               }
-# These lines manage density matrix initialization with slab+adsorbate density matrix
-# Slab matrices needs to be pre-calculated
-path2slabdm = "/scratch/c.c22015584/4by4-matrix/100/Cu"
-nspin = 1
-first_dm = 'D_spin_01_kpt_000001.csc'
-if os.path.exists(path2slabdm+"/"+first_dm):
-    flag_densitymatrix = True
-else:
-    flag_densitymatrix = False
 
 
 # if clauses managing different type of calculations
@@ -161,77 +150,16 @@ if args.DFTsinglepoint:
             atoms = structures[-1]
         else:
             atoms = structures[0]
-    
-    if (not flag_densitymatrix) or (not (True in atoms.pbc)):
-        if True in atoms.pbc:
-            atoms.set_pbc((True, True, False))
-            kgrid = get_k_grid(atoms, sampling_density, verbose=True, simple_reciprocal_space_parameters=False)
-            calc = Aims(profile=profile,
-                        k_grid=kgrid,
-                        **dft_params,
-                        compute_forces=".true.",
-                        )
-        else:
-            calc = Aims(profile=profile,
-                        **dft_params,
-                        )
+
+        calc = Aims(profile=profile,
+                    **dft_params,
+                    )
         calc.template.outputname = outfile
         atoms.calc = calc
         if os.path.exists(outfile):
             atoms = read_aims_output(outfile)
 
-        if True in atoms.pbc:
-            atoms.get_potential_energy(force_consistent=True)
-        else:
-            atoms.get_potential_energy()
-
-    elif flag_densitymatrix:
-        if os.path.exists(outfile):
-            atoms = read_aims_output(outfile)
-            if True in atoms.pbc:
-                atoms.get_potential_energy(force_consistent=True)
-            else:
-                atoms.get_potential_energy()
-        else:
-            if True in atoms.pbc:
-                atoms.set_pbc((True, True, False))
-                kgrid = get_k_grid(atoms, sampling_density, verbose=True, simple_reciprocal_space_parameters=False)
-                calc = Aims(profile=profile,
-                            k_grid=kgrid,
-                            **dft_params,
-                            compute_forces=".true.",
-                            elsi_restart="write 500",
-                            )
-
-            # Calculate adsorbate density matrices
-            ads = atoms.copy()
-            slab_index = [atom.index for atom in ads if atom.symbol not in ["C", "H", "O"]]
-
-            ads.set_constraint()
-
-            del ads[slab_index]
-            ads.calc = calc
-            ads.get_potential_energy(force_consistent=True)
-
-            properties = calc.implemented_properties
-            parameters = calc.parameters
-            parameters["elsi_restart"] = "read"
-            calc.template.update_parameters(properties, parameters)
-            atoms.calc = calc
-            calc.template.outputname = outfile
-
-            # Combine slab and adsorbate matrix
-            combine_slab_ads_dm(path_to_slab=path2slabdm, n_spin=nspin)
-
-            if True in atoms.pbc:
-                atoms.get_potential_energy(force_consistent=True)
-            else:
-                atoms.get_potential_energy()
-
-            # Calculation finished; remove dm files
-            cwd = os.getcwd()
-            csc_files = fnmatch.filter(os.listdir(cwd), '*.csc')
-            subprocess.run(["rm", ]+csc_files)
+        atoms.get_potential_energy(force_consistent=True)
 
 # elif args.minimahopping:
 #

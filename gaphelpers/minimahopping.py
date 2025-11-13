@@ -724,6 +724,7 @@ def get_surface_index(atoms, lattice_constant, set_tag=False):
             atoms[i].tag = 0
 
     return surf_index
+
 def create_dilute_alloy_np(
         parent_metal: str = "Cu",
         dopant: str = "Ru",
@@ -826,8 +827,8 @@ def create_adsorbate_surface(
     return atoms
 
 
-def prepare_input(smiles, facet, iteration=None, tmpdir=None, randseed=0, parallel=1, lattice_param=3.85, vacuum=30,
-                  using_opt_surface=False, surface_file=None, using_opt_adsorbate=False, adsorbate_file=None, ):
+def prepare_input(parent_metal, dopant, lattice, surface_indices, surface_energies, size, one_out_of_n,
+                  iteration=None, tmpdir=None, randseed=0, parallel=1, lattice_param=3.85):
     """
     Prepare adsorate + surface structure
 
@@ -857,78 +858,31 @@ def prepare_input(smiles, facet, iteration=None, tmpdir=None, randseed=0, parall
             write(tmpdir + f"/iter_0/2_Minhop/adsorption.traj", reference_dat[-1])
         else:
             if parallel == 1:
-                if using_opt_surface:
-                    if using_opt_adsorbate:
-                        newadsorption = create_adsorbate_surface(smiles, randseed=randseed,
-                                                                 using_opt_surface=using_opt_surface,
-                                                                 surface_file=surface_file,
-                                                                 using_opt_adsorbate=using_opt_adsorbate,
-                                                                 adsorbate_file=adsorbate_file)
-                    else:
-                        newadsorption = create_adsorbate_surface(smiles, randseed=randseed,
-                                                                 using_opt_surface=using_opt_surface,
-                                                                 surface_file=surface_file, )
-                else:
-                    newadsorption = create_adsorbate_surface(smiles, surface=facet, randseed=randseed,
-                                                             lattice_param=lattice_param, vacuum=vacuum)
-                write(tmpdir + f"/iter_{iteration}/2_Minhop/adsorption.traj", newadsorption)
+                nanoparticle = create_dilute_alloy_np(parent_metal, dopant, lattice, lattice_param, surface_indices,
+                                                      surface_energies, size, one_out_of_n, randomseed=randseed)
+
+                write(tmpdir + f"/iter_{iteration}/2_Minhop/adsorption.traj", nanoparticle)
             else:
                 for i in range(parallel):
                     Path(tmpdir + f"/iter_{iteration}/2_Minhop/{str(i).zfill(2)}").mkdir(parents=True, exist_ok=True)
-                    if using_opt_surface:
-                        if using_opt_adsorbate:
-                            newadsorption = create_adsorbate_surface(smiles, randseed=i,
-                                                                     using_opt_surface=using_opt_surface,
-                                                                     surface_file=surface_file,
-                                                                     using_opt_adsorbate=using_opt_adsorbate,
-                                                                     adsorbate_file=adsorbate_file)
-                        else:
+                    nanoparticle = create_dilute_alloy_np(parent_metal, dopant, lattice, lattice_param, surface_indices,
+                                                          surface_energies, size, one_out_of_n, randomseed=i)
 
-                            newadsorption = create_adsorbate_surface(smiles, randseed=i,
-                                                                     using_opt_surface=using_opt_surface,
-                                                                     surface_file=surface_file, )
-                    else:
-                        newadsorption = create_adsorbate_surface(smiles, surface=facet, randseed=i,
-                                                                 lattice_param=lattice_param, vacuum=vacuum)
-                    write(tmpdir + f"/iter_{iteration}/2_Minhop/{str(i).zfill(2)}/adsorption.traj", newadsorption)
+                    write(tmpdir + f"/iter_{iteration}/2_Minhop/{str(i).zfill(2)}/adsorption.traj", nanoparticle)
 
     else:
         if parallel == 1:
-            if using_opt_surface:
-                if using_opt_adsorbate:
-                    newadsorption = create_adsorbate_surface(smiles, randseed=randseed,
-                                                             using_opt_surface=using_opt_surface,
-                                                             surface_file=surface_file,
-                                                             using_opt_adsorbate=using_opt_adsorbate,
-                                                             adsorbate_file=adsorbate_file)
-                else:
+            nanoparticle = create_dilute_alloy_np(parent_metal, dopant, lattice, lattice_param, surface_indices,
+                                                  surface_energies, size, one_out_of_n, randomseed=randseed)
 
-                    newadsorption = create_adsorbate_surface(smiles, randseed=randseed,
-                                                             using_opt_surface=using_opt_surface,
-                                                             surface_file=surface_file, )
-            else:
-                newadsorption = create_adsorbate_surface(smiles, surface=facet, randseed=randseed,
-                                                         lattice_param=lattice_param, vacuum=vacuum)
-            write("adsorption.traj", newadsorption)
+            write("adsorption.traj", nanoparticle)
         else:
             for i in range(parallel):
                 Path(f"{str(i).zfill(2)}").mkdir(parents=True, exist_ok=True)
-                if using_opt_surface:
-                    if using_opt_adsorbate:
-                        newadsorption = create_adsorbate_surface(smiles, randseed=i,
-                                                                 using_opt_surface=using_opt_surface,
-                                                                 surface_file=surface_file,
-                                                                 using_opt_adsorbate=using_opt_adsorbate,
-                                                                 adsorbate_file=adsorbate_file)
-                    else:
+                nanoparticle = create_dilute_alloy_np(parent_metal, dopant, lattice, lattice_param, surface_indices,
+                                                      surface_energies, size, one_out_of_n, randomseed=i)
 
-                        newadsorption = create_adsorbate_surface(smiles, randseed=i,
-                                                                 using_opt_surface=using_opt_surface,
-                                                                 surface_file=surface_file, )
-                else:
-                    newadsorption = create_adsorbate_surface(smiles, surface=facet, randseed=i,
-                                                             lattice_param=lattice_param, vacuum=vacuum)
-                write(f"{str(i).zfill(2)}/adsorption.traj", newadsorption)
+                write(f"{str(i).zfill(2)}/adsorption.traj", nanoparticle)
 
 
 def check_GAP_convergence(statistics,
@@ -1015,7 +969,6 @@ def check_GAP_convergence(statistics,
         else:
             return False
 
-
     elif convergence == "light":
         if df.loc[iteration]["E_EMA"] < E_threshold or df.loc[iteration]["F_EMA"] < F_threshold:
             print("GAP converged with light convergence criteria")
@@ -1077,9 +1030,7 @@ def print_minhop_parameter(hop):
 
 def minimahopping(
         iteration,
-        smiles,
         potential_file,
-        facet,
         tmpdir=None,
         statistics={},
         verbose=True,
@@ -1137,10 +1088,14 @@ def minimahopping(
     relax_metal = kwargs.get("relax_metal", False)
     maxtemp_scale = kwargs.get("maxtemp_scale", 2)
     timestep = kwargs.get("timestep", 0.5)
-    using_opt_adsorbate = kwargs.get("using_opt_adsorbate", False)
-    adsorbate_file = kwargs.get("adsorbate_file", None)
-    using_opt_surface = kwargs.get("using_opt_surface", False)
-    surface_file = kwargs.get("surface_file", None)
+    parent_metal = kwargs.get("parent_metal", "Cu")
+    dopant = kwargs.get("dopant", "Ru")
+    lattice = kwargs.get("lattice", "fcc")
+    surface_indices = kwargs.get("surface_indices", [(1, 1, 1), (1, 1, 0), (1, 0, 0)])
+    surface_energies = kwargs.get("surface_energies", [1.447, 1.660, 1.584])
+    size = kwargs.get("size", 150)
+    one_out_of_n = kwargs.get("one_out_of_n", 9)
+    lattice_param = kwargs.get("lattice_param", 3.575)
 
     if verbose:
         print("start minima hopping")
@@ -1148,18 +1103,18 @@ def minimahopping(
     # Read in Structure
     atoms = read(initial_struc_file, index="-1")
 
-    # Set Constraints
-    if using_opt_adsorbate:
-        apply_constraints(atoms, relax_metal=relax_metal, method='file', adsorbate_file=adsorbate_file)
-    else:
-        apply_constraints(atoms, relax_metal=relax_metal, smiles=smiles)
+    # Set Constraints # No need anymore?
+    # if using_opt_adsorbate:
+    #     apply_constraints(atoms, relax_metal=relax_metal, method='file', adsorbate_file=adsorbate_file)
+    # else:
+    #     apply_constraints(atoms, relax_metal=relax_metal, smiles=smiles)
 
     if verbose:
         print(atoms.constraints)
         print("start reading potential file")
 
     # Set Calculator/ Potential
-    if iteration < 2 or statistics[iteration - 1]["RMSD_F_val"] > 1:
+    if iteration < 2 or statistics[iteration - 1]["RMSD_F_val"] > 3:  # eV/AA
         calc = mace_mp(model="medium", dispersion=False, default_dtype="float64", device='cpu')
         atoms.calc = calc
         if verbose:
@@ -1173,7 +1128,7 @@ def minimahopping(
     # Minima Hopping
     if not parallel:
 
-        if iteration <= 3 or statistics[iteration - 1]["RMSD_F_val"] > 1:  # eV/AA
+        if iteration < 2 or statistics[iteration - 1]["RMSD_F_val"] > 3:  # eV/AA
             hops = 10
             fmax = 10
             print(f"Force RMSD is larger than 1 eV/A : totalsteps are set {hops}, optimizer in minhop is set as mdmin")
@@ -1197,28 +1152,19 @@ def minimahopping(
         while len(read("minima.traj@:")) < 3:
             print("Minima from minhop are less than 3! Ten more hops are added")
             os.system("rm -f hop.log md* qn* ")
-            if using_opt_surface:
-                if using_opt_adsorbate:
-                    prepare_input(iteration=iteration, smiles=smiles, facet=facet, tmpdir=tmpdir,
-                                  randseed=iteration + count + 100,
-                                  using_opt_surface=using_opt_surface, surface_file=surface_file,
-                                  using_opt_adsorbate=using_opt_adsorbate, adsorbate_file=adsorbate_file)
-                else:
-                    prepare_input(iteration=iteration, smiles=smiles, facet=facet, tmpdir=tmpdir,
-                                  randseed=iteration + count + 100,
-                                  using_opt_surface=using_opt_surface, surface_file=surface_file)
-            else:
-                prepare_input(iteration=iteration, smiles=smiles, facet=facet, tmpdir=tmpdir,
-                              randseed=iteration + count + 100)
+
+            prepare_input(parent_metal, dopant, lattice, surface_indices, surface_energies, size, one_out_of_n,
+                          iteration=iteration, tmpdir=tmpdir, randseed=iteration + count + 100,
+                          lattice_param=lattice_param)
 
             atoms = read(initial_struc_file, index="-1")
 
-            if using_opt_adsorbate:
-                apply_constraints(atoms, relax_metal=relax_metal, method='file', adsorbate_file=adsorbate_file)
-            else:
-                apply_constraints(atoms, relax_metal=relax_metal, smiles=smiles)
+            # if using_opt_adsorbate:
+            #     apply_constraints(atoms, relax_metal=relax_metal, method='file', adsorbate_file=adsorbate_file)
+            # else:
+            #     apply_constraints(atoms, relax_metal=relax_metal, smiles=smiles)
 
-            if iteration < 2 or statistics[iteration - 1]["RMSD_F_val"] > 1:
+            if iteration < 2 or statistics[iteration - 1]["RMSD_F_val"] > 3:  # eV/AA
                 calc = mace_mp(model="medium", dispersion=False, default_dtype="float64", device='cpu')
                 atoms.calc = calc
                 if verbose:
@@ -1256,9 +1202,10 @@ def minimahopping(
         print(f"Minima hopping using GAP_2b_soap_iter_{iteration}.xml finished!!")
 
 
-def Run_parallel_minima_hopping(iteration, submitdir, smiles, facet, parallel=40, rerun=False, lattice_param=3.85,
-                                vacuum=30, relax_metal="", using_opt_surface=False, surface_file=None,
-                                using_opt_adsorbate=False, adsorbate_file=None, ):
+def Run_parallel_minima_hopping(iteration, submitdir, parallel=40, rerun=False, lattice_param=3.85,
+                                relax_metal="", parent_metal="Cu", dopant="Ru", lattice="fcc",
+                                surface_indices=[(1, 1, 1), (1, 1, 0), (1, 0, 0)],
+                                surface_energies=[1.447, 1.660, 1.584], size=150, one_out_of_n=9,):
     if relax_metal:
         relax_metal = " -rm"
     else:
@@ -1268,32 +1215,15 @@ def Run_parallel_minima_hopping(iteration, submitdir, smiles, facet, parallel=40
         print("Start parallel minima hopping")
         Path(submitdir + f"/a_parallel_minhop").mkdir(parents=True, exist_ok=True)
         os.chdir(submitdir + f"/a_parallel_minhop")
-        if using_opt_surface:
-            if using_opt_adsorbate:
-                prepare_input(smiles, facet, parallel=parallel,
-                              using_opt_surface=using_opt_surface, surface_file=surface_file,
-                              using_opt_adsorbate=using_opt_adsorbate, adsorbate_file=adsorbate_file)
-            else:
-                prepare_input(smiles, facet, parallel=parallel,
-                              using_opt_surface=using_opt_surface, surface_file=surface_file)
-        else:
-            prepare_input(smiles, facet, parallel=parallel, lattice_param=lattice_param, vacuum=vacuum)
+
+        prepare_input(parent_metal, dopant, lattice, surface_indices, surface_energies, size, one_out_of_n,
+                      parallel=parallel, lattice_param=lattice_param,)
         potential_file = submitdir + f"/iter_{iteration - 1}/GAP_2b_soap_iter_{iteration - 1}/GAP_2b_soap_iter_{iteration - 1}.xml"
 
         with open("cmd.lst", "w") as f:
-            if using_opt_surface:
-                if using_opt_adsorbate:
-                    for i in range(40):
-                        f.write(
-                            f'cd ./{str(i).zfill(2)}; srun --mem=4GB --exclusive -N 1 -n 1 python {os.path.dirname(os.path.realpath(__file__))}/minimahopping.py -slab {surface_file} -ads {adsorbate_file} -p "../GAP_2b_soap_iter_{iteration - 1}.xml"{relax_metal} -para -v > stdout.log \n')
-                else:
-                    for i in range(40):
-                        f.write(
-                            f'cd ./{str(i).zfill(2)}; srun --mem=4GB --exclusive -N 1 -n 1 python {os.path.dirname(os.path.realpath(__file__))}/minimahopping.py -slab {surface_file} -mh {smiles} -p "../GAP_2b_soap_iter_{iteration - 1}.xml"{relax_metal} -para -v > stdout.log \n')
-            else:
-                for i in range(40):
-                    f.write(
-                        f'cd ./{str(i).zfill(2)}; srun --mem=4GB --exclusive -N 1 -n 1 python {os.path.dirname(os.path.realpath(__file__))}/minimahopping.py -mh {smiles} -p "../GAP_2b_soap_iter_{iteration - 1}.xml"{relax_metal} -para -v > stdout.log \n')
+            for i in range(40):
+                f.write(
+                    f'cd ./{str(i).zfill(2)}; srun --mem=4GB --exclusive -N 1 -n 1 python {os.path.dirname(os.path.realpath(__file__))}/minimahopping.py -p "../GAP_2b_soap_iter_{iteration - 1}.xml"{relax_metal} -para -v > stdout.log \n')
 
         copyfile(f"{potential_file}", f"{os.getcwd()}/GAP_2b_soap_iter_{iteration - 1}.xml")
 
@@ -1302,44 +1232,28 @@ def Run_parallel_minima_hopping(iteration, submitdir, smiles, facet, parallel=40
         os.rename(f"{submitdir}/a_parallel_minhop", f"{submitdir}/y_parallel_minhop_prev")
         Path(submitdir + f"/a_parallel_minhop").mkdir(parents=True, exist_ok=True)
         os.chdir(submitdir + f"/a_parallel_minhop")
-        if using_opt_surface:
-            if using_opt_adsorbate:
-                prepare_input(smiles, facet, parallel=parallel,
-                              using_opt_surface=using_opt_surface, surface_file=surface_file,
-                              using_opt_adsorbate=using_opt_adsorbate, adsorbate_file=adsorbate_file)
-            else:
-                prepare_input(smiles, facet, parallel=parallel,
-                              using_opt_surface=using_opt_surface, surface_file=surface_file)
-        else:
-            prepare_input(smiles, facet, parallel=parallel, lattice_param=lattice_param, vacuum=vacuum)
+
+        prepare_input(parent_metal, dopant, lattice, surface_indices, surface_energies, size, one_out_of_n,
+                      parallel=parallel, lattice_param=lattice_param, )
         potential_file = submitdir + f"/iter_{iteration}/GAP_2b_soap_iter_{iteration}/GAP_2b_soap_iter_{iteration}.xml"
 
         with open("cmd.lst", "w") as f:
-            if using_opt_surface:
-                if using_opt_adsorbate:
-                    for i in range(40):
-                        f.write(
-                            f'cd ./{str(i).zfill(2)}; srun --mem=4GB --exclusive -N 1 -n 1 python {os.path.dirname(os.path.realpath(__file__))}/minimahopping.py -slab {surface_file} -ads {adsorbate_file} -p "../GAP_2b_soap_iter_{iteration}.xml"{relax_metal} -para -v > stdout.log \n')
-                else:
-                    for i in range(40):
-                        f.write(
-                            f'cd ./{str(i).zfill(2)}; srun --mem=4GB --exclusive -N 1 -n 1 python {os.path.dirname(os.path.realpath(__file__))}/minimahopping.py -slab {surface_file} -mh {smiles} -p "../GAP_2b_soap_iter_{iteration}.xml"{relax_metal} -para -v > stdout.log \n')
-            else:
-                for i in range(40):
-                    f.write(
-                        f'cd ./{str(i).zfill(2)}; srun --mem=4GB --exclusive -N 1 -n 1 python {os.path.dirname(os.path.realpath(__file__))}/minimahopping.py -mh {smiles} -p "../GAP_2b_soap_iter_{iteration}.xml"{relax_metal} -para -v > stdout.log \n')
+
+            for i in range(40):
+                f.write(
+                    f'cd ./{str(i).zfill(2)}; srun --mem=4GB --exclusive -N 1 -n 1 python {os.path.dirname(os.path.realpath(__file__))}/minimahopping.py -p "../GAP_2b_soap_iter_{iteration}.xml"{relax_metal} -para -v > stdout.log \n')
 
         copyfile(f"{potential_file}", f"{os.getcwd()}/GAP_2b_soap_iter_{iteration}.xml")
 
     #	copyfile(f"{os.path.dirname(os.path.realpath(__file__))}/GNUparallel.sh", f"{os.getcwd()}/GNUparallel.sh" )
     copyfile(f"{dirname(dirname(abspath(__file__)))}/GNUparallel.sh",
              f"{os.getcwd()}/GNUparallel.sh")
-    if using_opt_adsorbate:
-        idx, formula, smiles = get_adsorbate_info(using_opt_adsorbate=using_opt_adsorbate,
-                                                  adsorbate_file=adsorbate_file)
-    else:
-        idx, formula, smiles = get_adsorbate_info(smiles)
-    os.system(f'sed -i "5s/.*/#SBATCH -J Minhop_M{idx}_{formula}/" GNUparallel.sh')
+    # if using_opt_adsorbate:
+    #     idx, formula, smiles = get_adsorbate_info(using_opt_adsorbate=using_opt_adsorbate,
+    #                                               adsorbate_file=adsorbate_file)
+    # else:
+    #     idx, formula, smiles = get_adsorbate_info(smiles)
+    os.system(f'sed -i "5s/.*/#SBATCH -J Minhop_M{size}_{dopant}{parent_metal}/" GNUparallel.sh')
     job_ids = os.popen("sbatch GNUparallel.sh").read().strip().split()[-1:]
 
     if check_slurm_completion(job_ids, timelimit=300 * 60, sleep=30):
@@ -1354,28 +1268,14 @@ if __name__ == "__main__":
     else:
         minima_traj = "minima.traj"
 
-    file_params = {"using_opt_surface": False,
-                   "surface_file": None,
-                   "using_opt_adsorbate": False,
-                   "adsorbate_file": None}
-    if os.path.exists(args.slab):
-        file_params["using_opt_surface"] = True
-        file_params["surface_file"] = args.slab
-    if os.path.exists(args.adsorbate):
-        file_params["using_opt_adsorbate"] = True
-        file_params["adsorbate_file"] = args.adsorbate
-
     minimahopping(
         iteration=args.iteration,
-        smiles=args.minimahopping,
         potential_file=args.potential,
         hops=args.hops,
-        facet=args.facet,
         tmpdir=args.tmpdir,
         minima_traj=minima_traj,
         relax_metal=args.relaxmetal,
         randseed=args.randseed,
         parallel=args.parallel,
         maxtemp_scale=args.maxtemp_scale,
-        **file_params
     )

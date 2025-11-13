@@ -112,7 +112,7 @@ for iteration in range(start_iter, end_iter+1):
     Path(tmpdir + f'/iter_{iteration}').mkdir(parents=True, exist_ok=True)
     if iteration == 0:
         copyfile(submitdir + f'/input_training_data_iter_0.xyz',
-                tmpdir + f'/iter_{iteration}/input_training_data_iter_{iteration}.xyz')
+                 tmpdir + f'/iter_{iteration}/input_training_data_iter_{iteration}.xyz')
     else:
         os.system(f"rsync -az {submitdir}/iter_{iteration-1}/3_DFT_minhop/input_training_data_iter_{iteration}.xyz " +
                   f"{tmpdir}/iter_{iteration}/input_training_data_iter_{iteration}.xyz")
@@ -139,21 +139,18 @@ for iteration in range(start_iter, end_iter+1):
     # Minima hopping
     #os.environ["OMP_NUM_THREADS"] = "1"
     start = time.time()
-    prepare_input(iteration=iteration, smiles=args.minimahopping, facet=args.facet, tmpdir=tmpdir,
-               randseed=iteration, lattice_param=lattice_param, vacuum=vacuum, **file_params)
+    prepare_input(**np_params, iteration=iteration, tmpdir=tmpdir, randseed=iteration, lattice_param=lattice_param)
 
-    minimahopping(iteration, args.minimahopping,
+    minimahopping(iteration,
                   f"../GAP_2b_soap_iter_{iteration}/GAP_2b_soap_iter_{iteration}.xml",
-                  facet=args.facet,
                   tmpdir=tmpdir,
                   randseed=iteration,
                   statistics=statistics,
                   timestep=0.5,
                   relax_metal=args.relaxmetal,
-                  **file_params)
+                  **np_params,
+                  lattice_param=lattice_param,)
     timing["minhop"] = time.time() - start
-
-
 
     # DFT calculation
     os.chdir(submitdir)
@@ -163,7 +160,7 @@ for iteration in range(start_iter, end_iter+1):
 
     start = time.time()
     job_ids = sample_training_set(iteration, forcemask=args.force_mask, sampling_method=args.sampling,
-                                  parallel=args.parallel,calculate_all_minima=args.calc_all_minima,
+                                  parallel=args.parallel, calculate_all_minima=args.calc_all_minima,
                                   code=code, path_to_workflow=args.gaphelper, universal_soap_yaml=universal_soap_yaml)
 
     print("DFT job submitted.")
@@ -212,7 +209,7 @@ for iteration in range(start_iter, end_iter+1):
 # =======================
 # Parallel Minima hopping
 # =======================
-Run_parallel_minima_hopping(iteration, submitdir, args.minimahopping, args.facet, lattice_param=lattice_param, vacuum=vacuum, relax_metal=args.relaxmetal, **file_params)
+Run_parallel_minima_hopping(iteration, submitdir, lattice_param=lattice_param, relax_metal=args.relaxmetal, **np_params)
 
 
 
