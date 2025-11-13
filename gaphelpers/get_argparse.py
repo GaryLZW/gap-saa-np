@@ -106,17 +106,19 @@ def get_argparse():
     )
     
     parser.add_argument(
-            "-slab",
-            "--slab",
+            "-parent",
+            "--parent",
             type=str,
-            help="Path to pre-optimized suface model"
+            default="Cu",
+            help="Name of parent metal"
     )
     
     parser.add_argument(
-            "-ads",
-            "--adsorbate",
+            "-dop",
+            "--dopant",
             type=str,
-            help="Path to pre-optimized adsorbate geometry"
+            default="Ru",
+            help="Name of dopant."
     )
     parser.add_argument(
             "-gap",

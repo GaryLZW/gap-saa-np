@@ -977,11 +977,9 @@ def check_GAP_convergence(statistics,
             return False
 
 
-def check_GAP_convergence_after_parallel_MH(smiles, submitdir, calculate=True, code="aims", free_atom_e=None,
-                                            using_opt_adsorbate=False, adsorbate_file=None, path_to_workflow=None):
+def check_GAP_convergence_after_parallel_MH(submitdir, calculate=True, code="aims", free_atom_e=None, path_to_workflow=None):
     if calculate:
-        job_ids = cluster_sample(smiles, submitdir=submitdir, singlepoint=True, code=code,
-                                 using_opt_adsorbate=using_opt_adsorbate, adsorbate_file=adsorbate_file,
+        job_ids = cluster_sample(submitdir=submitdir, singlepoint=True, code=code,
                                  free_atom_e=free_atom_e, path_to_workflow=path_to_workflow)
 
         if check_slurm_completion(job_ids):

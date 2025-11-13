@@ -37,8 +37,8 @@ def get_adsorbate_info(mol=None,
 
 def write_slurm(
             end_iter,
-            mol,
-            facet,
+            parent_metal,
+            dopant,
             iteration=0,
             forcemask=True,
             no_universal_soap=True,
@@ -46,10 +46,6 @@ def write_slurm(
             slurm_file_name = "submit.sh",
             mol_json = str(Path(__file__).parent.resolve()) + "/n3_mol_mod.json",
             code = "aims",
-            using_opt_surface=False, 
-            surface_file=None,
-            using_opt_adsorbate=False, 
-            adsorbate_file=None,
             path_to_workflow=None,
             ):
     """
@@ -87,10 +83,10 @@ def write_slurm(
     """
 
 
-    if using_opt_adsorbate:
-        idx, formula, smiles = get_adsorbate_info(using_opt_adsorbate=using_opt_adsorbate, adsorbate_file=adsorbate_file)
-    else:
-        idx, formula, smiles = get_adsorbate_info(mol)
+    # if using_opt_adsorbate:
+    #     idx, formula, smiles = get_adsorbate_info(using_opt_adsorbate=using_opt_adsorbate, adsorbate_file=adsorbate_file)
+    # else:
+    #     idx, formula, smiles = get_adsorbate_info(mol)
 
     universal_soap = "-mus " if no_universal_soap else ""
     forcemask = "-fm " if forcemask else ""
@@ -102,7 +98,7 @@ def write_slurm(
 #SBATCH -o ./tjob.out.%j
 #SBATCH -e ./tjob.err.%j
 #SBATCH -D ./
-#SBATCH -J GAP_M{idx}_{formula}_{facet}
+#SBATCH -J GAP_{dopant}{parent_metal}_wulff
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task={ncpus}	
@@ -127,19 +123,9 @@ export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 #conda activate quip
 
 """
-    if using_opt_surface:
-        if using_opt_adsorbate:
-            slurm_str += f"""
-python3 {path_to_workflow}/training_gap_iter_n.py -i {iteration} -e {end_iter} -slab {surface_file} -ads {adsorbate_file} -gap {path_to_workflow} -f {facet} {universal_soap}{forcemask} {code} | tee -a stdout.log
-"""
-        else:
-            slurm_str += f"""
-python3 {path_to_workflow}/training_gap_iter_n.py -i {iteration} -e {end_iter} -slab {surface_file} -mh {smiles} -gap {path_to_workflow} -f {facet} {universal_soap}{forcemask} {code} | tee -a stdout.log
-"""
-    else:
 
-        slurm_str += f"""
-python3 {path_to_workflow}/training_gap_iter_n.py -i {iteration} -e {end_iter} -mh {smiles} -gap {path_to_workflow} -f {facet} {universal_soap}{forcemask} {code}  | tee -a stdout.log
+    slurm_str += f"""
+python3 {path_to_workflow}/training_gap_iter_n.py -i {iteration} -e {end_iter} -gap {path_to_workflow} {universal_soap}{forcemask} {code}  | tee -a stdout.log
 """
 
     with open(slurm_file_name, "w") as f:
@@ -221,24 +207,8 @@ python3 {path_to_workflow}/ase_submit.py -sp {target_file_name}
 if __name__ == "__main__":
     args = get_argparse()
 
-    file_params = {"using_opt_surface":False, 
-                   "surface_file":None, 
-                   "using_opt_adsorbate":False, 
-                   "adsorbate_file":None}
-    if os.path.exists(args.slab):
-        file_params["using_opt_surface"] = True
-        file_params["surface_file"] = args.slab
-    if os.path.exists(args.adsorbate):
-        file_params["using_opt_adsorbate"] = True
-        file_params["adsorbate_file"] = args.adsorbate
-
-    if file_params["using_opt_adsorbate"]:
-        idx, formula, smiles = get_adsorbate_info(using_opt_adsorbate=True, adsorbate_file=args.adsorbate)
-    else:
-        idx, formula, smiles = get_adsorbate_info(args.minimahopping)	
-    print(idx, formula, smiles)
 #	numdir = len(next(os.walk('.'))[1])
-    f_name = f"{str(idx).zfill(3)}_M{idx}_{formula}_{args.facet}"
+    f_name = f"saa_{args.dopant}{args.parent}_wulff"
     Path(f_name).mkdir(parents=True, exist_ok=True)
     if os.path.exists("restart_training_data.xyz"):
         os.system(f"cp restart_training_data.xyz {f_name}")
@@ -247,9 +217,8 @@ if __name__ == "__main__":
     write_slurm(
             iteration = args.iteration,
             end_iter = args.enditeration,
-            mol = smiles,
-            facet = args.facet,
-            **file_params,
+            parent_metal=args.parent,
+            dopant=args.dopant,
             path_to_workflow=args.gaphelper,
             )	
     if args.submit:

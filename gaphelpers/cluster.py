@@ -35,8 +35,6 @@ def build_SOAP_vector(list_of_atoms, elements):
 #	return np.array([mini for mini in soap.create(list_of_atoms)])    
 
 
-
-
 def kpca_kmeans(submitdir, kmeanscluster=5, only_chemisorption=False, code="aims", free_atom_e=None):
     """
     This function takes converged minima ensemble from parallelized minima hopping and sample five representative structures from there.
@@ -63,14 +61,14 @@ def kpca_kmeans(submitdir, kmeanscluster=5, only_chemisorption=False, code="aims
         return {i: atoms for i, atoms in enumerate(minima)}
 
     else:
-        if only_chemisorption:
-            physisorption, only_H_bond, minima = filter_physisorption(minima, filter_hydrogen_bond = True, verbose = True)
-            if len(minima) == 0:
-                print("There are only physisorbed structures")
-                minima  =  read(submitdir+ "/a_parallel_minhop" + "/minima.traj@:")
-
-            elif len(minima) < kmeanscluster:
-                return {i: atoms for i, atoms in enumerate(minima)}
+        # if only_chemisorption:
+        #     physisorption, only_H_bond, minima = filter_physisorption(minima, filter_hydrogen_bond = True, verbose = True)
+        #     if len(minima) == 0:
+        #         print("There are only physisorbed structures")
+        #         minima  =  read(submitdir+ "/a_parallel_minhop" + "/minima.traj@:")
+        #
+        #     elif len(minima) < kmeanscluster:
+        #         return {i: atoms for i, atoms in enumerate(minima)}
         
         elements = minima[0].get_chemical_symbols()
         # minima_soap = soap.create(minima)
@@ -147,9 +145,8 @@ def filter_physisorption(minima_list, filter_hydrogen_bond = True, verbose = Fal
     return physisorption, only_H_bond, chemisorption
 
 
-def cluster_sample(smiles, submitdir, surface = "211",  singlepoint = False, submit = True, kmeanscluster=10,
-                   only_chemisorption=True, code="aims", f_name="b_DFT_relaxation", free_atom_e=None,
-                   using_opt_adsorbate=False, adsorbate_file=None, path_to_workflow=None):
+def cluster_sample(submitdir, singlepoint=False, submit=True, kmeanscluster=10, only_chemisorption=True,
+                   code="aims", f_name="b_DFT_relaxation", free_atom_e=None, path_to_workflow=None):
     """
     Perform DFT single point calculation / geometry relaxation on sampled representative structures.
     Ultimately DFT relaxation is needed, but single point calculation is required when the accuracy of
@@ -174,24 +171,24 @@ def cluster_sample(smiles, submitdir, surface = "211",  singlepoint = False, sub
     path_to_workflow : str
     """
 
-    minima_dict =  kpca_kmeans(submitdir, only_chemisorption=only_chemisorption, kmeanscluster=kmeanscluster, free_atom_e=free_atom_e)
+    minima_dict = kpca_kmeans(submitdir, only_chemisorption=only_chemisorption, kmeanscluster=kmeanscluster, free_atom_e=free_atom_e)
 
     if singlepoint:
 
         f_name = "/c_DFT_singlepoint4cluster"
 
         job_ids = []
-        if using_opt_adsorbate:
-            idx, formula, smiles = get_adsorbate_info(using_opt_adsorbate=using_opt_adsorbate, adsorbate_file=adsorbate_file)
-        else:
-            idx, formula, smiles = get_adsorbate_info(smiles)
+        # if using_opt_adsorbate:
+        #     idx, formula, smiles = get_adsorbate_info(using_opt_adsorbate=using_opt_adsorbate, adsorbate_file=adsorbate_file)
+        # else:
+        #     idx, formula, smiles = get_adsorbate_info(smiles)
         for i, index in enumerate(minima_dict.keys()):
             Path("/".join([submitdir, f_name, f"{i}_structure"] )).mkdir(parents = True, exist_ok = True)
             os.chdir("/".join([submitdir, f_name, f"{i}_structure"] ))
             with open(f"structure_{index}.pickle", "wb") as h:
                  pickle.dump(minima_dict[index], h, protocol=pickle.HIGHEST_PROTOCOL)
 
-            write_dft_slurm(f"M{idx}_{formula}_{surface}_{index}", code=code,
+            write_dft_slurm(f"{i}-min{index}-struc", code=code,
                             target_file_name=f"structure_{index}.pickle", path_to_workflow=path_to_workflow)
             #os.system('sed -i "7s/.*/#SBATCH --ntasks=40/" submit.sh')
             #if code == "aims":
@@ -215,10 +212,6 @@ def cluster_sample(smiles, submitdir, surface = "211",  singlepoint = False, sub
 
         Path(f"{submitdir}/{f_name}").mkdir(parents=True, exist_ok=True)
         os.chdir(f"{submitdir}/{f_name}")
-        if using_opt_adsorbate:
-            idx, formula, smiles = get_adsorbate_info(using_opt_adsorbate=using_opt_adsorbate, adsorbate_file=adsorbate_file)
-        else:
-            idx, formula, smiles = get_adsorbate_info(smiles)
 
         for i, conf_index in enumerate(minima_dict.keys()):
             Path("/".join([submitdir, f_name, f"{i}_structure"] )).mkdir(parents = True, exist_ok = True)
@@ -226,7 +219,7 @@ def cluster_sample(smiles, submitdir, surface = "211",  singlepoint = False, sub
             with open(f"structure_{conf_index}.pickle", "wb") as h:
                 pickle.dump(minima_dict[conf_index], h, protocol=pickle.HIGHEST_PROTOCOL)
 
-            write_dft_slurm(f"M{idx}_{formula}_{surface}_{conf_index}", code=code, time="24:00:00",
+            write_dft_slurm(f"{i}-struc_{conf_index}", code=code, time="24:00:00",
                             target_file_name=f"structure_{conf_index}.pickle", path_to_workflow=path_to_workflow,)
 
             #os.system('sed -i "7s/.*/#SBATCH --ntasks=40/" submit.sh')

@@ -33,16 +33,6 @@ else:
     tmpdir = scratchfolder
 Path(tmpdir).mkdir(parents=True, exist_ok = True)
 
-# file_params = {"using_opt_surface":False,
-#               "surface_file":None,
-#               "using_opt_adsorbate":False,
-#               "adsorbate_file":None}
-# if os.path.exists(args.slab):
-#     file_params["using_opt_surface"] = True
-#     file_params["surface_file"] = args.slab
-# if os.path.exists(args.adsorbate):
-#     file_params["using_opt_adsorbate"] = True
-#     file_params["adsorbate_file"] = args.adsorbate
 ################################
 
 # Automatic determination of starting iteration
@@ -218,9 +208,8 @@ Run_parallel_minima_hopping(iteration, submitdir, lattice_param=lattice_param, r
 # ===============
 
 # Check GAP convergence; collect minima with kPCA and k-means clustering
-if not check_GAP_convergence_after_parallel_MH(args.minimahopping, submitdir, code=code, free_atom_e=isolated_atom_energy,
-                                               using_opt_adsorbate=file_params["using_opt_adsorbate"],
-                                               adsorbate_file=args.adsorbate, path_to_workflow=args.gaphelper):
+if not check_GAP_convergence_after_parallel_MH(submitdir, code=code,
+                                               free_atom_e=isolated_atom_energy, path_to_workflow=args.gaphelper):
     print(f"Error for selected five minima is too high. ")
 #
 #	# In case you don't know what's the iteration number

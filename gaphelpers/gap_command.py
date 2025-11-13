@@ -185,11 +185,10 @@ def get_gap_command(stage,
     else:
         length_scales = yaml.safe_load(open(universal_soap_yaml))
         universal_soap = SOAP_hypers(uniques,
-                                    length_scales = length_scales,
-                                    spacing = 1.5,
-                                    no_extra_inner=True,
-                                    no_extra_outer=True
-                                       )
+                                     length_scales = length_scales,
+                                     spacing = 1.5,
+                                     no_extra_inner=True,
+                                     no_extra_outer=True)
         # Only single soap is selected by removing one with larger cutoff
         for Z in universal_soap:
             toremove = np.argmax(np.asarray([soapdict["cutoff"] for soapdict in universal_soap[Z]]))
