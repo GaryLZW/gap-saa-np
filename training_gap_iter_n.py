@@ -57,14 +57,19 @@ else:
     end_iter = int(args.enditeration)
 
 ### This part sets the input params for building np ###
+miller_index = []
+surf_e_list = []
+#for index in args.surface_energy:
+#    miller_index.append(index)
+#    surf_e_list.append(args.surface_energy[index])
 
-np_params = {"parent_metal": "Cu",
-             "dopant": "Ru",
+np_params = {"parent_metal": args.parent,
+             "dopant": args.dopant,
              "lattice": "fcc",
              "surface_indices": [(1, 1, 1), (1, 1, 0), (1, 0, 0)],
              "surface_energies": [1.447, 1.660, 1.584],
-             "size": 150,
-             "one_out_of_n": 9}
+             "size": args.size,
+             "one_out_of_n": args.one_out_of_n}
 
 if args.quantum_espresso:
     lattice_param, code = 3.6, "qe"

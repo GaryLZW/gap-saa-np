@@ -61,7 +61,8 @@ dft_params = {"override_warning_libxc": ".true.",
               "sc_accuracy_forces": 1e-4,
               "sc_accuracy_etot": 1e-5,
               "sc_accuracy_eev": 1e-3,
-              "sc_accuracy_rho": 1e-4
+              "sc_accuracy_rho": 1e-4,
+              #"k_grid": (1, 1, 1),
               }
 
 
@@ -155,6 +156,7 @@ if args.DFTsinglepoint:
                     **dft_params,
                     )
         calc.template.outputname = outfile
+        atoms.set_cell([0, 0, 0])  # remove unit cell if any
         atoms.calc = calc
         if os.path.exists(outfile):
             atoms = read_aims_output(outfile)

@@ -39,8 +39,10 @@ def write_slurm(
             end_iter,
             parent_metal,
             dopant,
+            size,
+            one_out_of_n,
             iteration=0,
-            forcemask=True,
+            forcemask=False,
             no_universal_soap=True,
             ncpus = 1,
             slurm_file_name = "submit.sh",
@@ -125,7 +127,8 @@ export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 """
 
     slurm_str += f"""
-python3 {path_to_workflow}/training_gap_iter_n.py -i {iteration} -e {end_iter} -gap {path_to_workflow} {universal_soap}{forcemask} {code}  | tee -a stdout.log
+python3 {path_to_workflow}/training_gap_iter_n.py -i {iteration} -e {end_iter} -parent {parent_metal} -dop {dopant} \\ 
+        -size {size} -conc {one_out_of_n} -gap {path_to_workflow} {universal_soap}{forcemask} {code}  | tee -a stdout.log 
 """
 
     with open(slurm_file_name, "w") as f:
@@ -138,9 +141,9 @@ def write_dft_slurm(jobname,
                     forcemask=False,
                     code="aims",
                     path_to_workflow=None,
-                    time="02:00:00",
+                    time="04:00:00",
                     cores=80,
-                    mem=0,
+                    mem=50000,
 ):
     forcemask = "-fm" if forcemask else ""
     code_name = "-qe" if code == "qe" else ""
@@ -219,6 +222,8 @@ if __name__ == "__main__":
             end_iter = args.enditeration,
             parent_metal=args.parent,
             dopant=args.dopant,
+            size=args.size,
+            one_out_of_n=args.one_out_of_n,
             path_to_workflow=args.gaphelper,
             )	
     if args.submit:

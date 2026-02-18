@@ -9,7 +9,7 @@ from shutil import copyfile, rmtree
 import argparse, os, numpy as np, pandas as pd
 import time, igraph as ig
 from write_slurm import write_dft_slurm, get_adsorbate_info
-from encode import make_trainingset_file, parse_output
+from encode import make_trainingset_file, parse_output, add_dummy_cell
 from cluster import build_SOAP_vector, cluster_sample
 from get_argparse import get_minhop_args
 from gap_command import get_SOAP_param_dict
@@ -335,7 +335,7 @@ def prepare_initial_config(parent_metal, dopant, lattice, surface_indices, surfa
     init_structs = []
     job_ids = []
     #calc = mace_mp(model="medium", dispersion=False, default_dtype="float64", device='cpu')
-    for i in range(5):
+    for i in range(2):
 
         nanoparticle = create_dilute_alloy_np(parent_metal, dopant, lattice, lattice_param, surface_indices,
                                               surface_energies, size, one_out_of_n, randomseed=i * 50 + 1000)
@@ -749,6 +749,9 @@ def create_dilute_alloy_np(
                                size=size, structure=lattice, latticeconstant=lattice_constant)
     surf_i = get_surface_index(atoms, lattice_constant, set_tag=True)
 
+    #r_max = np.max([np.linalg.norm(np.asarray([atom.position - atoms.get_center_of_mass()])) for atom in atoms])
+    #atoms.set_cell([2 * (r_max + 50),] * 3)
+    #atoms.set_center_of_mass([r_max + 50, ] * 3)
     random.seed(randomseed)
     sample_index = random.sample(surf_i, int(len(surf_i) / one_out_of_n))
     for i in sample_index:
@@ -860,28 +863,28 @@ def prepare_input(parent_metal, dopant, lattice, surface_indices, surface_energi
             if parallel == 1:
                 nanoparticle = create_dilute_alloy_np(parent_metal, dopant, lattice, lattice_param, surface_indices,
                                                       surface_energies, size, one_out_of_n, randomseed=randseed)
-
+                add_dummy_cell(nanoparticle)
                 write(tmpdir + f"/iter_{iteration}/2_Minhop/adsorption.traj", nanoparticle)
             else:
                 for i in range(parallel):
                     Path(tmpdir + f"/iter_{iteration}/2_Minhop/{str(i).zfill(2)}").mkdir(parents=True, exist_ok=True)
                     nanoparticle = create_dilute_alloy_np(parent_metal, dopant, lattice, lattice_param, surface_indices,
                                                           surface_energies, size, one_out_of_n, randomseed=i)
-
+                    add_dummy_cell(nanoparticle)
                     write(tmpdir + f"/iter_{iteration}/2_Minhop/{str(i).zfill(2)}/adsorption.traj", nanoparticle)
 
     else:
         if parallel == 1:
             nanoparticle = create_dilute_alloy_np(parent_metal, dopant, lattice, lattice_param, surface_indices,
                                                   surface_energies, size, one_out_of_n, randomseed=randseed)
-
+            add_dummy_cell(nanoparticle)
             write("adsorption.traj", nanoparticle)
         else:
             for i in range(parallel):
                 Path(f"{str(i).zfill(2)}").mkdir(parents=True, exist_ok=True)
                 nanoparticle = create_dilute_alloy_np(parent_metal, dopant, lattice, lattice_param, surface_indices,
                                                       surface_energies, size, one_out_of_n, randomseed=i)
-
+                add_dummy_cell(nanoparticle)
                 write(f"{str(i).zfill(2)}/adsorption.traj", nanoparticle)
 
 

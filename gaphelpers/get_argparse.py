@@ -2,7 +2,7 @@ import argparse
 
 # argparse
 def get_argparse():
-
+    import json
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument(
         "-i",
@@ -119,6 +119,27 @@ def get_argparse():
             type=str,
             default="Ru",
             help="Name of dopant."
+    )
+    #parser.add_argument(
+    #    "-surfE",
+    #    "--surface_energy",
+    #    type=json.loads,
+    #    default="{(1,1,1):1.447,(1,1,0):1.660,(1,0,0):1.584}",
+    #    help="Dictionary of miller index-surface energy as a string, without spaces in the whole {}"
+    #)
+    parser.add_argument(
+        "-size",
+        "--size",
+        type=int,
+        default=150,
+        help="Size of nanoparticle, round to closest value."
+    )
+    parser.add_argument(
+        "-conc",
+        "--one_out_of_n",
+        type=int,
+        default=9,
+        help="Concentration of dopant on the surface. One out of n."
     )
     parser.add_argument(
             "-gap",

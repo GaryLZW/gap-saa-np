@@ -110,7 +110,10 @@ def parse_output(outputfile="stdout.log", free_atom_e=None):
 
     return atoms
 
-
+def add_dummy_cell(atoms):
+    r_max = np.max([np.linalg.norm(np.asarray([atom.position - atoms.get_center_of_mass()])) for atom in atoms])
+    atoms.set_cell([2 * (r_max + 50), ] * 3)
+    atoms.set_center_of_mass([r_max + 50, ] * 3)
 
 def write_xyz(
         iteration,
@@ -166,7 +169,11 @@ def write_xyz(
     atoms.arrays["forces_dft"] = atoms.get_forces()
     if len(atoms) == 1 or len(atoms) == 2:
         atoms.set_cell([(50,0,0),(0,50,0),(0,0,50)])
-
+    else: # Add large dummy box to make quippy happy
+        #r_max = np.max([np.linalg.norm(np.asarray([atom.position - atoms.get_center_of_mass()])) for atom in atoms])
+        #atoms.set_cell([2 * (r_max + 50), ] * 3)
+        #atoms.set_center_of_mass([r_max + 50, ] * 3)
+        add_dummy_cell(atoms)
 
     write(f"../input_training_data_iter_{iteration+1}.xyz", atoms, format="extxyz", append="w")
 
