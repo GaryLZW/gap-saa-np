@@ -44,7 +44,7 @@ matplotlib.use("agg")
 from ase.optimize import MDMin
 import subprocess
 from rdkit2ase import rdkit2ase, ase2rdkit
-from mace.calculators import mace_mp
+#from mace.calculators import mace_mp
 from ase.optimize import BFGS
 import random
 from ase.cluster import Octahedron, wulff_construction
