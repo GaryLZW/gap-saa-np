@@ -17,11 +17,13 @@ echo "#--- Job started at `date`"
 # unloading modules
 module purge
 # loading user modules
-module load parallel/20190122
+#module load parallel/20190122
 #module load mkl/2020/2
 #module load compiler/intel/2020/0
 #module load anaconda/2020.02
-module load python/3.10.4
+#module load python/3.10.4
+module load Python/3.10.4-GCCcore-11.3.0
+module load parallel/20250722-GCCcore-14.3.0
 
 # this one echos each command (only after module scripts!)
 #ulimit -u 10000
@@ -29,8 +31,8 @@ module load python/3.10.4
 # environment variables
 #eval "$(conda shell.bash hook)"
 #conda activate quip
-. /scratch/$USER/myquip/bin/activate
-export PYTHONPATH=/scratch/c.c22015584/mace_gap_test/gap_workflow_surface:$PYTHONPATH
+. /shared/home1/$USER/quip/bin/activate
+export PYTHONPATH=/shared/home1/$USER/gap-saa-np:$PYTHONPATH
 # the actual binary that is run
  
 # custom pre-command stuff

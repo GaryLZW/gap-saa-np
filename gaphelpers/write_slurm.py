@@ -93,14 +93,14 @@ def write_slurm(
     universal_soap = "-mus " if no_universal_soap else ""
     forcemask = "-fm " if forcemask else ""
     code = "-qe" if code == "qe" else ""
-    mem = 12000
+    mem = 24000
     ncpus = 1
 
     slurm_str = f"""#!/bin/bash -l
 #SBATCH -o ./tjob.out.%j
 #SBATCH -e ./tjob.err.%j
 #SBATCH -D ./
-#SBATCH -J GAP_{dopant}{parent_metal}_wulff
+#SBATCH -J GAP_{parent_metal}{dopant}_wulff
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task={ncpus}	
@@ -111,14 +111,16 @@ def write_slurm(
     slurm_str += f"""
 
 module purge
-module load python/3.10.4
 
-. /scratch/$USER/myquip/bin/activate
+module load Python/3.10.4-GCCcore-11.3.0
+
+. /shared/home1/$USER/quip/bin/activate
+
 
 #module load anaconda/2020.02
 
 export PYTHONPATH={path_to_workflow}:$PYTHONPATH
-
+export I_MPI_PMI_LIBRARY=/usr/lib64/libpmi.so
 ulimit -s unlimited 
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 #eval "$(conda shell.bash hook)"
@@ -142,8 +144,8 @@ def write_dft_slurm(jobname,
                     code="aims",
                     path_to_workflow=None,
                     time="04:00:00",
-                    cores=80,
-                    mem=50000,
+                    cores=190,
+                    mem="200G",
 ):
     forcemask = "-fm" if forcemask else ""
     code_name = "-qe" if code == "qe" else ""
@@ -167,16 +169,12 @@ def write_dft_slurm(jobname,
 
 module purge
 
-module load mpi/intel/2018/2
-module load compiler/intel/2018/2
+module load Python/3.10.4-GCCcore-11.3.0
+. /shared/home1/$USER/quip/bin/activate
 
-#module load python/3.10.4
-#. /scratch/$USER/quip/bin/activate
+module load intel/2025b
 
-module load anaconda/2020.02
-eval "$(conda shell.bash hook)"
-conda activate quip
-
+export I_MPI_PMI_LIBRARY=/usr/lib64/libpmi.so
 ulimit -s unlimited
 export OMP_NUM_THREADS=1
 export MKL_DYNAMIC=FALSE

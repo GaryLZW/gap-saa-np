@@ -45,8 +45,8 @@ if os.path.exists(args.adsorbate):
     file_params["using_opt_adsorbate"] = True
     file_params["adsorbate_file"] = args.adsorbate
 
-aimsbin = "/apps/local/projects/scw1057/software/fhi-aims/bin/aims.231208.scalapack.mpi.x"
-species_dir = "/apps/local/projects/scw1057/software/fhi-aims/species_defaults/defaults_2020/light"
+aimsbin = "/shared/home2/app_shared/SCWF00007/software/fhi-aims/release/231212/bin/aims.231212.scalapack.mpi.x"
+species_dir = "/shared/home2/app_shared/SCWF00007/software/fhi-aims/release/231212/species_defaults/defaults_2020/light"
 mpiexe = "time srun"
 #cpu_command = "--nodes=$SLURM_NNODES --ntasks=$SLURM_NTASKS -d mpirun"
 outfile = f"{args.submitdir}/stdout.log" if args.submitdir else "stdout.log"

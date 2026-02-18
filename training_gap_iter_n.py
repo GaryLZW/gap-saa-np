@@ -24,7 +24,7 @@ args = get_argparse()
 ################################
 submitdir = os.getcwd()
 scratchfolder = submitdir +"/"+ "myGapScratch"
-universal_soap_yaml = "/scratch/c.c22015584/mace_gap_test/gap_workflow_surface/length_scales_VASP_auto_length_scales.yaml"
+universal_soap_yaml = f"{args.gaphelper}/length_scales_VASP_auto_length_scales.yaml"
 
 # make temp folder
 if args.noscratch:
