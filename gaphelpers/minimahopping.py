@@ -30,6 +30,7 @@ from ase import neighborlist
 from ase.optimize.minimahopping import MHPlot
 from ase import Atoms
 from ase.build import add_adsorbate
+from ase.io import Trajectory
 import ase
 
 from rdkit import Chem
@@ -108,14 +109,21 @@ def sample_training_set(iteration, submit=True, forcemask=False, collect_job_id=
     # This part is added for rebuttal: to calculate DFT reference for all minima
     # structures found in serial minima hopping
     if calculate_all_minima:
+        f_name = cwd + f"/iter_{iteration}/2_Minhop/"
+        Path(f_name).mkdir(parents=True, exist_ok=True)
+        traj = Trajectory(f_name + "/structure.traj", mode="a")
+        for idx, atoms in enumerate(minimas):
+            traj.write(atoms)
+        traj.close()
 
-        for i in range(len(minimas)):
-            Path(f"{cwd}/iter_{iteration}/2_Minhop/{i}_minima").mkdir(parents=True, exist_ok=True)
-            os.chdir(f"{cwd}/iter_{iteration}/2_Minhop/{i}_minima")
-            write(f"{cwd}/iter_{iteration}/2_Minhop/{i}_minima/structure.traj", minimas[i])
-            write_dft_slurm(f"minima_calculation", path_to_workflow=path_to_workflow)
-            num = os.popen("sbatch submit.sh").read()
-            job_ids.append(num.strip().split()[-1])
+        if submit:
+            os.chdir(f_name)
+            if np.all([os.path.exists(f"{idx}_structure/stdout.log") for idx, atoms in enumerate(minimas)]):
+                print("There is a output file in each folder. Continue")
+            else:
+                write_dft_slurm("minima_calculation", forcemask=forcemask, code=code, path_to_workflow=path_to_workflow)
+                num = os.popen("sbatch submit.sh").read()
+                job_ids.append(num.strip().split()[-1])
 
         os.chdir(cwd + f"/iter_{iteration}/2_Minhop")
     ################
@@ -248,33 +256,30 @@ def sample_training_set(iteration, submit=True, forcemask=False, collect_job_id=
     #			  f"{cwd}/iter_{iteration}/3_DFT_minhop/input_training_data_iter_{iteration+1}.xyz")
 
     #	write(cwd + f"/iter_{iteration}/3_DFT_minhop/new_training_set_iter{iteration}.xyz", new_trainingset, format="extxyz")
-
+    f_name = cwd + f"/iter_{iteration}/3_DFT_minhop"
+    Path(f_name).mkdir(parents=True, exist_ok=True)
+    traj = Trajectory(f_name + "/structure.traj", mode="a")
     for idx, atoms in enumerate(list(new_trainingset)):
-        f_name = cwd + f"/iter_{iteration}/3_DFT_minhop/{idx}_structure"
-        Path(f_name).mkdir(parents=True, exist_ok=True)
-        write(f_name + "/structure.traj", atoms)
+        traj.write(atoms)
+    traj.close()
 
     if submit and collect_job_id:
-        for idx, atoms in enumerate(list(new_trainingset)):
-            f_name = cwd + f"/iter_{iteration}/3_DFT_minhop/{idx}_structure"
-            os.chdir(f_name)
-            if os.path.exists("stdout.log"):
-                write_dft_slurm(f"iter{iteration}_{idx}", forcemask=forcemask, code=code,
-                                path_to_workflow=path_to_workflow, time="00:20:00", cores=1, mem=4000)
-            else:
-                write_dft_slurm(f"iter{iteration}_{idx}", forcemask=forcemask, code=code,
-                                path_to_workflow=path_to_workflow)
-            num = os.popen("sbatch submit.sh").read()
-            job_ids.append(num.strip().split()[-1])
 
+        os.chdir(f_name)
+        if np.all([os.path.exists(f"{idx}_structure/stdout.log") for idx, atoms in enumerate(list(new_trainingset))]):
+            print("There is a output file in each folder. Continue")
+        else:
+            write_dft_slurm(f"iter{iteration}", forcemask=forcemask, code=code, path_to_workflow=path_to_workflow)
+
+        num = os.popen("sbatch submit.sh").read()
+        job_ids.append(num.strip().split()[-1])
     else:
         os.chdir(f_name)
-        if os.path.exists("stdout.log"):
-            write_dft_slurm(iteration, idx, forcemask=forcemask, code=code, path_to_workflow=path_to_workflow,
-                            time="00:20:00", cores=1, mem=4000)
+        if np.all([os.path.exists(f"{idx}_structure/stdout.log") for idx, atoms in enumerate(list(new_trainingset))]):
+            print("There is a output file in each folder. Continue")
         else:
-            write_dft_slurm(iteration, idx, forcemask=forcemask, code=code, path_to_workflow=path_to_workflow)
-        os.system(f"sbatch submit.sh")
+            write_dft_slurm(f"iter{iteration}", forcemask=forcemask, code=code, path_to_workflow=path_to_workflow)
+            os.system(f"sbatch submit.sh")
 
     if collect_job_id:
         return job_ids
@@ -349,29 +354,29 @@ def prepare_initial_config(parent_metal, dopant, lattice, surface_indices, surfa
         # opt = BFGS(opt_adsorption)
         # opt.run(fmax=0.05)
         # init_structs.append(opt_adsorption.copy())
-
+    f_name = cwd + "/z_init"
+    Path(f_name).mkdir(parents=True, exist_ok=True)
+    traj = Trajectory(f_name + "/structure.traj", mode="a")
     for idx, atoms in enumerate(init_structs):
-        f_name = cwd + f"/z_init/{idx}_structure"
-        Path(f_name).mkdir(parents=True, exist_ok=True)
-        write(f_name + "/structure.traj", atoms)
+        traj.write(atoms)
+    traj.close()
 
     if submit:
-        for idx, atoms in enumerate(init_structs):
-            f_name = cwd + f"/z_init/{idx}_structure"
-            os.chdir(f_name)
-            if os.path.exists("stdout.log"):
-                write_dft_slurm(f"init_config_{idx}", forcemask=forcemask, code=code, path_to_workflow=path_to_workflow,
-                                time="00:20:00", cores=1, mem=4000)
-            else:
-                write_dft_slurm(f"init_config_{idx}", forcemask=forcemask, code=code, path_to_workflow=path_to_workflow)
+        os.chdir(f_name)
+        if np.all([os.path.exists(f"{idx}_structure/stdout.log") for idx, atoms in enumerate(init_structs)]):
+            print("There is a output file in each folder. Continue")
+            make_trainingset_file(-1, cwd, peratomsigma=peratomsigma, forcemask=forcemask, update="initial",
+                                  code=code, free_atom_e=free_atom_e)
+        else:
+            write_dft_slurm("init_config", forcemask=forcemask, code=code, path_to_workflow=path_to_workflow)
 
             num = os.popen("sbatch submit.sh").read()
             job_ids.append(num.strip().split()[-1])
 
-    if check_slurm_completion(job_ids):
-        os.chdir(cwd)
-        make_trainingset_file(-1, cwd, peratomsigma=peratomsigma, forcemask=forcemask, update="initial", code=code,
-                              free_atom_e=free_atom_e)
+        if check_slurm_completion(job_ids):
+            os.chdir(cwd)
+            make_trainingset_file(-1, cwd, peratomsigma=peratomsigma, forcemask=forcemask, update="initial", code=code,
+                                  free_atom_e=free_atom_e)
 
         return True
 
@@ -408,7 +413,7 @@ def prepare_isolated_atom(parent_metal, dopant, lattice, surface_indices, surfac
             else:
                 write_dft_slurm("free_atom", forcemask=forcemask, code=code,
                                 target_file_name=f"free-atom-{ele}.traj", path_to_workflow=path_to_workflow,
-                                time="00:20:00", cores=1, mem=4000)
+                                time="00:20:00", nodes=1, cores=1, mem=4000)
                 num = os.popen("sbatch submit.sh").read()
                 job_ids.append(num.strip().split()[-1])
 
@@ -984,14 +989,17 @@ def check_GAP_convergence_after_parallel_MH(submitdir, calculate=True, code="aim
     if calculate:
         job_ids = cluster_sample(submitdir=submitdir, singlepoint=True, code=code,
                                  free_atom_e=free_atom_e, path_to_workflow=path_to_workflow)
-
-        if check_slurm_completion(job_ids):
-            print("DFT job all finished")
+        if job_ids is None:
+            print("DFT jobs should already finished")
+        elif check_slurm_completion(job_ids):
+            print("DFT jobs all finished")
     else:
         pass
 
     DFT, GAP = [], []
-    for i in range(5):
+    import fnmatch
+    minima_folders = fnmatch.filter(os.listdir(f"{submitdir}/c_DFT_singlepoint4cluster"), '*_structure')
+    for i in range(len(minima_folders)):
         # DFT result
         pwd = f"{submitdir}/c_DFT_singlepoint4cluster/{i}_structure"
         os.chdir(pwd)
@@ -1012,7 +1020,7 @@ def check_GAP_convergence_after_parallel_MH(submitdir, calculate=True, code="aim
         GAP.append(get_atomization_energy(atoms, atoms.get_potential_energy(apply_constraint=False), code=code,
                                           free_atom_e=free_atom_e))
         error = rmse(DFT, GAP, )
-    print(f"RMSD for selected five minima is {error:0.2f} eV")
+    print(f"RMSD for selected {len(minima_folders)} minima is {error:0.2f} eV")
 
     if error < 1:
         return True

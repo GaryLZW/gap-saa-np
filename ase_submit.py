@@ -7,9 +7,9 @@ from ase.io.aims import read_aims_output
 import os
 import argparse, pickle
 from gaphelpers.kgrid import get_k_grid
-from elsi_restart.combine_elsi import combine_slab_ads_dm
 import subprocess
 import fnmatch
+import concurrent.futures
 
 
 def get_dft_args():
@@ -30,6 +30,20 @@ def get_dft_args():
 
     return parser.parse_args()
 
+def condensed_generator(atoms, profile, dft_params, outfile, i_struct, suffix="structure"):
+    directory = f"{i_struct}_{suffix}"
+    calc = Aims(profile=profile,
+                **dft_params,
+                compute_forces=".true.",
+                directory=directory,
+                )
+    calc.template.outputname = outfile
+    atoms.set_cell([0, 0, 0])  # remove unit cell if any
+    atoms.calc = calc
+    if os.path.exists(outfile):
+        atoms = read_aims_output(outfile)
+
+    atoms.get_potential_energy(force_consistent=True)
 
 args = get_dft_args()
 
@@ -45,13 +59,16 @@ if os.path.exists(args.adsorbate):
     file_params["using_opt_adsorbate"] = True
     file_params["adsorbate_file"] = args.adsorbate
 
+total_nodes = 2
+nodes_per_instance = 1
+cpu_command = f"--nodes={nodes_per_instance} --ntasks={192 * nodes_per_instance}"
 aimsbin = "/shared/home2/app_shared/SCWF00007/software/fhi-aims/release/250822/bin/aims.250822.scalapack.mpi.x"
 species_dir = "/shared/home2/app_shared/SCWF00007/software/fhi-aims/release/250822/species_defaults/defaults_2020/light"
 mpiexe = "time srun"
 #cpu_command = "--nodes=$SLURM_NNODES --ntasks=$SLURM_NTASKS -d mpirun"
 outfile = f"{args.submitdir}/stdout.log" if args.submitdir else "stdout.log"
-aims_command = "{} {}".format(mpiexe, aimsbin)
-sampling_density = 0.019 #Sampling density for k points
+aims_command = "{} {} {}".format(mpiexe, cpu_command, aimsbin)
+#sampling_density = 0.019 #Sampling density for k points
 profile=AimsProfile(command=aims_command, default_species_directory=species_dir)
 
 dft_params = {"override_warning_libxc": ".true.",
@@ -152,16 +169,22 @@ if args.DFTsinglepoint:
         else:
             atoms = structures[0]
 
+    if len(atoms) == 1:
+        aims_command = "{} {}".format(mpiexe, aimsbin)
+        profile = AimsProfile(command=aims_command, default_species_directory=species_dir)
         calc = Aims(profile=profile,
                     **dft_params,
                     )
         calc.template.outputname = outfile
-        atoms.set_cell([0, 0, 0])  # remove unit cell if any
         atoms.calc = calc
         if os.path.exists(outfile):
             atoms = read_aims_output(outfile)
-
-        atoms.get_potential_energy(force_consistent=True)
+        atoms.get_potential_energy()
+    else:
+        concurrent_tasks = int(total_nodes / nodes_per_instance)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=concurrent_tasks) as executor:
+            futures = [executor.submit(condensed_generator, structures[n], profile, dft_params, outfile, n)
+                       for n in range(len(structures))]
 
 # elif args.minimahopping:
 #
