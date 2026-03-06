@@ -143,8 +143,9 @@ def write_dft_slurm(jobname,
                     forcemask=False,
                     code="aims",
                     path_to_workflow=None,
-                    time="04:00:00",
-                    cores=190,
+                    time="02:00:00",
+                    nodes=2,
+                    cores=384,
                     mem="200G",
 ):
     forcemask = "-fm" if forcemask else ""
@@ -161,7 +162,7 @@ def write_dft_slurm(jobname,
 #SBATCH -e ./tjob.err.%j
 #SBATCH -D ./
 #SBATCH -J {jobname}
-
+#SBATCH --nodes={nodes}
 #SBATCH --ntasks={cores}
 #SBATCH --ntasks-per-core=1
 #SBATCH --mem={mem}
