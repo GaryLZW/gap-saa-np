@@ -129,8 +129,7 @@ export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 """
 
     slurm_str += f"""
-python3 {path_to_workflow}/training_gap_iter_n.py -i {iteration} -e {end_iter} -parent {parent_metal} -dop {dopant} \\ 
-        -size {size} -conc {one_out_of_n} -gap {path_to_workflow} {universal_soap}{forcemask} {code}  | tee -a stdout.log 
+python3 {path_to_workflow}/training_gap_iter_n.py -i {iteration} -e {end_iter} -parent {parent_metal} -dop {dopant} -size {size} -conc {one_out_of_n} -gap {path_to_workflow} {universal_soap}{forcemask} {code}  | tee -a stdout.log 
 """
 
     with open(slurm_file_name, "w") as f:
