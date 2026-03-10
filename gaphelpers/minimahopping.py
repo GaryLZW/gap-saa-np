@@ -340,7 +340,7 @@ def prepare_initial_config(parent_metal, dopant, lattice, surface_indices, surfa
     init_structs = []
     job_ids = []
     #calc = mace_mp(model="medium", dispersion=False, default_dtype="float64", device='cpu')
-    for i in range(2):
+    for i in range(5):
 
         nanoparticle = create_dilute_alloy_np(parent_metal, dopant, lattice, lattice_param, surface_indices,
                                               surface_energies, size, one_out_of_n, randomseed=i * 50 + 1000)
