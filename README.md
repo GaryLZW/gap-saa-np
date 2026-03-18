@@ -40,7 +40,7 @@ source activate # Or eval "$(conda shell.bash hook)"
 conda activate quip
 ```
 
-Regular venv should also work
+Regular venv should also work (Example on Falcon)
 ```
 module load Python/3.10.4-GCCcore-11.3.0
 python3 -m venv quip
@@ -48,7 +48,6 @@ python3 -m venv quip
 
 
 ```
-pip install ase==3.25.0
 pip install rdkit
 pip install igraph
 pip install universalSOAP
@@ -56,8 +55,10 @@ pip install dscribe
 pip install pandas
 pip install pyyaml
 pip install rdkit2ase
-pip install wfl
 pip install mace-torch
+pip install matscipy==1.1.0
+pip install ase==3.25.0
+pip install wfl
 ```
 Numpy 1.x is needed at the time of writing.
 
@@ -67,6 +68,7 @@ Install quip from pip
 ```
 pip install quippy-ase
 ```
+
 Or compile from source. Sequence for loading modules seems to matter.
 ```
 module purge
@@ -99,11 +101,12 @@ These lines in `quippy/potential.py` are commented
     #    self.name_ = name
 ```
 
+Version of `f90wrap` needs to be consistent with version of `quippy-ase`. For `quippy-ase` 0.10.x you need `f90wrap` 0.3.x, for `quippy-ase 0.9.x` you need `f90wrap` 0.2.x.
 
 ## Important scripts
 `gaphelpers/write_slurm.py`: manage submission script for Slurm. Change `module load` commands according to the supercomputer environment
 
-`training_gap_iter_n.py`: manage GAP training and sampling of GAP minima. You can change scratch folder and choose whether to perform DFT relaxation.
+`training_gap_iter_n.py`: manage GAP training and sampling of GAP minima. You can change scratch folder.
 
 `ase_submit.py`: manage settings for DFT calculations. Change the path to your aims binary, the aims command, and species directory accordingly.
 

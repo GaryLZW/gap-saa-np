@@ -5,7 +5,8 @@ from gaphelpers.hyperparameter import get_atomization_energy
 from sklearn.decomposition import KernelPCA
 from dscribe.descriptors import SOAP
 from sklearn.cluster import KMeans
-from ase.io import read, write
+from sklearn.metrics import silhouette_score
+from ase.io import read, write, Trajectory
 from ase import neighborlist
 import numpy as np, pandas as pd, os, sys
 from pathlib import Path
@@ -79,6 +80,8 @@ def kpca_kmeans(submitdir, kmeanscluster=5, only_chemisorption=False, code="aims
         minima_soap_kernel_pca = kernel_pca.fit_transform(minima_soap)
         clustering = KMeans(n_clusters=kmeanscluster, random_state=1).fit(minima_soap_kernel_pca)
         print("clustering done!")
+        labels = clustering.labels_
+        mean_silhouette = silhouette_score(minima_soap_kernel_pca, labels, metric='euclidean')
 
         # Make dataframe
         minima_dict = {}
@@ -95,9 +98,9 @@ def kpca_kmeans(submitdir, kmeanscluster=5, only_chemisorption=False, code="aims
         representatives = [df.loc[df.label == g].AE.idxmin() for g in np.unique(clustering.labels_)]
         print("Representative index : ", representatives)
 
-        # minima_dict = {i: minima[i] for i in representatives}
+        minima_dict = {i: minima[i] for i in representatives}
 
-        return {i: minima[i] for i in representatives}
+        return minima_dict, mean_silhouette
 
 
 
@@ -171,31 +174,36 @@ def cluster_sample(submitdir, singlepoint=False, submit=True, kmeanscluster=10, 
     path_to_workflow : str
     """
 
-    minima_dict = kpca_kmeans(submitdir, only_chemisorption=only_chemisorption, kmeanscluster=kmeanscluster, free_atom_e=free_atom_e)
+    silhouette_max = -1
+    for kmeanscluster in range(2, 13):
+        test_minima_dict, silhouette = kpca_kmeans(submitdir, only_chemisorption=only_chemisorption,
+                                                   kmeanscluster=kmeanscluster, free_atom_e=free_atom_e)
+        if silhouette > silhouette_max:
+            silhouette_max = silhouette
+            ncluster = kmeanscluster
+            repre_minima_dict = test_minima_dict
+
+    print(f"The number of cluster is set to be {ncluster}, based on Silhoutte analysis. "
+          f"The largest Silhoutte score is {silhouette_max}")
 
     if singlepoint:
 
         f_name = "/c_DFT_singlepoint4cluster"
 
         job_ids = []
-        # if using_opt_adsorbate:
-        #     idx, formula, smiles = get_adsorbate_info(using_opt_adsorbate=using_opt_adsorbate, adsorbate_file=adsorbate_file)
-        # else:
-        #     idx, formula, smiles = get_adsorbate_info(smiles)
-        for i, index in enumerate(minima_dict.keys()):
-            Path("/".join([submitdir, f_name, f"{i}_structure"] )).mkdir(parents = True, exist_ok = True)
-            os.chdir("/".join([submitdir, f_name, f"{i}_structure"] ))
-            with open(f"structure_{index}.pickle", "wb") as h:
-                 pickle.dump(minima_dict[index], h, protocol=pickle.HIGHEST_PROTOCOL)
 
-            write_dft_slurm(f"{i}-min{index}-struc", code=code,
-                            target_file_name=f"structure_{index}.pickle", path_to_workflow=path_to_workflow)
-            #os.system('sed -i "7s/.*/#SBATCH --ntasks=40/" submit.sh')
-            #if code == "aims":
-            #    os.system(f'sed -i "36s/.*/ase_submit.py -sp structure_{index}.pickle/" submit.sh')
-            #elif code == "qe":
-            #    os.system(f'sed -i "37s/.*/ase_submit.py -qe -sp structure_{index}.pickle/" submit.sh')
+        Path("/".join([submitdir, f_name])).mkdir(parents=True, exist_ok=True)
+        traj = Trajectory(submitdir + '/' + f_name + "/structure.traj", mode="a")
+        for i, index in enumerate(repre_minima_dict.keys()):
+            traj.write(repre_minima_dict[index])
+        traj.close()
 
+        os.chdir("/".join([submitdir, f_name]))
+        if np.all([os.path.exists(f"{idx}_structure/stdout.log") for idx in range(len(repre_minima_dict))]):
+            print("There is a output file in each folder. Continue")
+            job_ids = None
+        else:
+            write_dft_slurm(f"{i}-min{index}-struc", code=code, time="04:00:00", path_to_workflow=path_to_workflow)
 
             if submit:
                 num = os.popen("sbatch submit.sh").read()
@@ -213,11 +221,11 @@ def cluster_sample(submitdir, singlepoint=False, submit=True, kmeanscluster=10, 
         Path(f"{submitdir}/{f_name}").mkdir(parents=True, exist_ok=True)
         os.chdir(f"{submitdir}/{f_name}")
 
-        for i, conf_index in enumerate(minima_dict.keys()):
+        for i, conf_index in enumerate(repre_minima_dict.keys()):
             Path("/".join([submitdir, f_name, f"{i}_structure"] )).mkdir(parents = True, exist_ok = True)
             os.chdir("/".join([submitdir, f_name, f"{i}_structure"] ))
             with open(f"structure_{conf_index}.pickle", "wb") as h:
-                pickle.dump(minima_dict[conf_index], h, protocol=pickle.HIGHEST_PROTOCOL)
+                pickle.dump(repre_minima_dict[conf_index], h, protocol=pickle.HIGHEST_PROTOCOL)
 
             write_dft_slurm(f"{i}-struc_{conf_index}", code=code, time="24:00:00",
                             target_file_name=f"structure_{conf_index}.pickle", path_to_workflow=path_to_workflow,)

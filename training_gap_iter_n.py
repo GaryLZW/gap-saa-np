@@ -164,7 +164,7 @@ for iteration in range(start_iter, end_iter+1):
         if args.calc_all_minima:
             for j in range(len(read(f"{submitdir}/iter_{iteration}/2_Minhop/minima.traj@:"))):
                 print(j, end = " ")
-                os.chdir(f"{submitdir}/iter_{iteration}/2_Minhop/{j}_minima")
+                os.chdir(f"{submitdir}/iter_{iteration}/2_Minhop/{j}_structure")
                 atoms = parse_output(free_atom_e=isolated_atom_energy)
                 atoms.arrays["forces_dft"] = atoms.get_forces()
                 write(f"{submitdir}/iter_{iteration}/2_Minhop/input_training_data_iter_{iteration+1}.xyz",

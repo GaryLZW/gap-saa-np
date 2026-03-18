@@ -129,8 +129,7 @@ export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 """
 
     slurm_str += f"""
-python3 {path_to_workflow}/training_gap_iter_n.py -i {iteration} -e {end_iter} -parent {parent_metal} -dop {dopant} \\ 
-        -size {size} -conc {one_out_of_n} -gap {path_to_workflow} {universal_soap}{forcemask} {code}  | tee -a stdout.log 
+python3 {path_to_workflow}/training_gap_iter_n.py -i {iteration} -e {end_iter} -parent {parent_metal} -dop {dopant} -size {size} -conc {one_out_of_n} -gap {path_to_workflow} {universal_soap}{forcemask} {code}  | tee -a stdout.log 
 """
 
     with open(slurm_file_name, "w") as f:
@@ -143,8 +142,9 @@ def write_dft_slurm(jobname,
                     forcemask=False,
                     code="aims",
                     path_to_workflow=None,
-                    time="04:00:00",
-                    cores=190,
+                    time="02:00:00",
+                    nodes=2,
+                    cores=384,
                     mem="200G",
 ):
     forcemask = "-fm" if forcemask else ""
@@ -161,7 +161,7 @@ def write_dft_slurm(jobname,
 #SBATCH -e ./tjob.err.%j
 #SBATCH -D ./
 #SBATCH -J {jobname}
-
+#SBATCH --nodes={nodes}
 #SBATCH --ntasks={cores}
 #SBATCH --ntasks-per-core=1
 #SBATCH --mem={mem}
