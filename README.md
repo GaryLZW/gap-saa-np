@@ -48,7 +48,6 @@ python3 -m venv quip
 
 
 ```
-pip install ase==3.25.0
 pip install rdkit
 pip install igraph
 pip install universalSOAP
@@ -56,6 +55,9 @@ pip install dscribe
 pip install pandas
 pip install pyyaml
 pip install rdkit2ase
+pip install mace-torch
+pip install matscipy==1.1.0
+pip install ase==3.25.0
 pip install wfl
 ```
 Numpy 1.x is needed at the time of writing.
