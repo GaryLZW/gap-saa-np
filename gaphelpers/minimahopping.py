@@ -1123,15 +1123,20 @@ def minimahopping(
         print("start reading potential file")
 
     # Set Calculator/ Potential
-    if iteration < 2 or statistics[iteration - 1]["RMSD_F_val"] > 3:  # eV/AA
-        calc = mace_mp(model="medium", dispersion=False, default_dtype="float64", device='cpu')
-        atoms.calc = calc
-        if verbose:
-            print("Low accuracy! Use mace as calculator to insure stability.")
-    else:
-        pot = Potential(param_filename=potential_file)
-        atoms.calc = pot
-        if verbose:
+    #if iteration < 2 or statistics[iteration - 1]["RMSD_F_val"] > 3:  # eV/AA
+    #    calc = mace_mp(model="medium", dispersion=False, default_dtype="float64", device='cpu')
+    #    atoms.calc = calc
+    #    if verbose:
+    #        print("Low accuracy! Use mace as calculator to insure stability.")
+    #else:
+    #    pot = Potential(param_filename=potential_file)
+    #    atoms.calc = pot
+    #    if verbose:
+    #        print("potential file has been read!")
+    
+    pot = Potential(param_filename=potential_file)
+    atoms.calc = pot
+    if verbose:
             print("potential file has been read!")
 
     # Minima Hopping
@@ -1173,16 +1178,22 @@ def minimahopping(
             # else:
             #     apply_constraints(atoms, relax_metal=relax_metal, smiles=smiles)
 
-            if iteration < 2 or statistics[iteration - 1]["RMSD_F_val"] > 3:  # eV/AA
-                calc = mace_mp(model="medium", dispersion=False, default_dtype="float64", device='cpu')
-                atoms.calc = calc
-                if verbose:
-                    print("Low accuracy! Use mace as calculator to insure stability.")
-            else:
-                pot = Potential(param_filename=potential_file)
-                atoms.calc = pot
-                if verbose:
+            #if iteration < 2 or statistics[iteration - 1]["RMSD_F_val"] > 3:  # eV/AA
+            #    calc = mace_mp(model="medium", dispersion=False, default_dtype="float64", device='cpu')
+            #    atoms.calc = calc
+            #    if verbose:
+            #        print("Low accuracy! Use mace as calculator to insure stability.")
+            #else:
+            #    pot = Potential(param_filename=potential_file)
+            #    atoms.calc = pot
+            #    if verbose:
+            #        print("potential file has been read!")
+
+            pot = Potential(param_filename=potential_file)
+            atoms.calc = pot
+            if verbose:
                     print("potential file has been read!")
+
             print("initial structure for minima hopping changed!")
 
             if low_accuracy:
