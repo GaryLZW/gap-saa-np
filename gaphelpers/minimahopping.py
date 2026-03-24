@@ -111,7 +111,7 @@ def sample_training_set(iteration, submit=True, forcemask=False, collect_job_id=
     if calculate_all_minima:
         f_name = cwd + f"/iter_{iteration}/2_Minhop/"
         Path(f_name).mkdir(parents=True, exist_ok=True)
-        traj = Trajectory(f_name + "/structure.traj", mode="a")
+        traj = Trajectory(f_name + "/structure.traj", mode="w")
         for idx, atoms in enumerate(minimas):
             traj.write(atoms)
         traj.close()
