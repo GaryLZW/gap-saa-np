@@ -45,7 +45,7 @@ else:
     last_iter = sorted([fn for fn in next(os.walk(submitdir))[1] if fn.startswith("iter_")], key =lambda s:int(s.split("_")[1]))[-1]
     last_iter = int(last_iter.split("_")[1])
 
-    if last_iter != int(args.iteration):
+    if last_iter != int(args.iteration) or last_iter == 0:
         print(f"last iteration was {last_iter}. Resume workflow from there. ")
         start_iter = last_iter + 1
     else:
@@ -114,13 +114,13 @@ for iteration in range(start_iter, end_iter+1):
 
     # GAP fitting
     #os.environ["OMP_NUM_THREADS"] = "36"
-    f_name = f"{submitdir}/iter_{iteration}/GAP_2b_soap_iter_{iteration}"
+    f_name = f"{tmpdir}/iter_{iteration}/GAP_2b_soap_iter_{iteration}"
     if os.path.isdir(f"{f_name}") and os.path.isfile(f"{f_name}/GAP_2b_soap_iter_{iteration}.xml"):
         # Replacement of segmentation error
         print("GAP_fitting is already done! Resuming to minima hopping")
         reference_dat = read(tmpdir + f'/iter_{iteration}/input_training_data_iter_{iteration}.xyz@:')
         quip_results = read(tmpdir + f"/iter_{iteration}/GAP_2b_soap_iter_{iteration}/quip_train_GAP_2b_soap_iter_{iteration}.xyz@:")
-        statistics[iteration] = plot_accuracy(iteration, reference_dat, quip_results, 'GAP_2b_soap_', code=code)
+        statistics[iteration] = plot_accuracy(iteration, reference_dat, quip_results, 'GAP_2b_soap_', code=code, free_atom_e=isolated_atom_energy)
 
     else:
         start = time.time()
