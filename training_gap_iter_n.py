@@ -120,7 +120,7 @@ for iteration in range(start_iter, end_iter+1):
         print("GAP_fitting is already done! Resuming to minima hopping")
         reference_dat = read(tmpdir + f'/iter_{iteration}/input_training_data_iter_{iteration}.xyz@:')
         quip_results = read(tmpdir + f"/iter_{iteration}/GAP_2b_soap_iter_{iteration}/quip_train_GAP_2b_soap_iter_{iteration}.xyz@:")
-        statistics[iteration] = plot_accuracy(iteration, reference_dat, quip_results, 'GAP_2b_soap_', code=code)
+        statistics[iteration] = plot_accuracy(iteration, reference_dat, quip_results, 'GAP_2b_soap_', code=code, free_atom_e=isolated_atom_energy)
 
     else:
         start = time.time()
