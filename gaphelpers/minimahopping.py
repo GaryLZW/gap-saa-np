@@ -995,6 +995,9 @@ def check_GAP_convergence_after_parallel_MH(submitdir, calculate=True, code="aim
             print("DFT jobs all finished")
     else:
         pass
+    
+    potential_file = submitdir + f"/iter_{iteration - 1}/GAP_2b_soap_iter_{iteration - 1}/GAP_2b_soap_iter_{iteration - 1}.xml"
+    pot = Potential(param_filename=potential_file)
 
     DFT, GAP = [], []
     import fnmatch
@@ -1018,6 +1021,9 @@ def check_GAP_convergence_after_parallel_MH(submitdir, calculate=True, code="aim
         #with open(f"{pwd}/" + glob.glob("*.pickle")[0], 'rb') as handle:
         #    atoms = pickle.load(handle)
         structures = read(f"{submitdir}/c_DFT_singlepoint4cluster/structure.traj@:")
+        
+        atoms = structures[i]
+        atoms.calc = pot
         GAP.append(get_atomization_energy(atoms, atoms.get_potential_energy(apply_constraint=False), code=code,
                                           free_atom_e=free_atom_e))
         error = rmse(DFT, GAP, )

@@ -193,7 +193,7 @@ def cluster_sample(submitdir, singlepoint=False, submit=True, kmeanscluster=10, 
         job_ids = []
 
         Path("/".join([submitdir, f_name])).mkdir(parents=True, exist_ok=True)
-        traj = Trajectory(submitdir + '/' + f_name + "/structure.traj", mode="a")
+        traj = Trajectory(submitdir + '/' + f_name + "/structure.traj", mode="w")
         for i, index in enumerate(repre_minima_dict.keys()):
             traj.write(repre_minima_dict[index])
         traj.close()
