@@ -142,6 +142,13 @@ def get_argparse():
         help="Concentration of dopant on the surface. One out of n."
     )
     parser.add_argument(
+        "-t0",
+        "--initial_temperature",
+        type=int,
+        default=2000,
+        help="The initial temperature for the minima hopping."
+    )
+    parser.add_argument(
             "-gap",
             "--gaphelper",
             type=str,
@@ -244,6 +251,14 @@ def get_minhop_args():
             "--adsorbate",
             type=str,
             help="Path to pre-optimized adsorbate geometry"
+    )
+
+    parser.add_argument(
+        "-t0",
+        "--initial_temperature",
+        type=int,
+        default=2000,
+        help="The initial temperature for the minima hopping."
     )
 
     args = parser.parse_args()

@@ -1221,7 +1221,7 @@ def minimahopping(
 def Run_parallel_minima_hopping(iteration, submitdir, parallel=40, rerun=False, lattice_param=3.85,
                                 relax_metal="", parent_metal="Cu", dopant="Ru", lattice="fcc",
                                 surface_indices=[(1, 1, 1), (1, 1, 0), (1, 0, 0)],
-                                surface_energies=[1.447, 1.660, 1.584], size=150, one_out_of_n=9,):
+                                surface_energies=[1.447, 1.660, 1.584], size=150, one_out_of_n=9, t0=2000):
     if relax_metal:
         relax_metal = " -rm"
     else:
@@ -1239,7 +1239,7 @@ def Run_parallel_minima_hopping(iteration, submitdir, parallel=40, rerun=False, 
         with open("cmd.lst", "w") as f:
             for i in range(40):
                 f.write(
-                    f'cd ./{str(i).zfill(2)}; srun --mem=4GB --exclusive -N 1 -n 1 python {os.path.dirname(os.path.realpath(__file__))}/minimahopping.py -p "../GAP_2b_soap_iter_{iteration - 1}.xml"{relax_metal} -para -v > stdout.log \n')
+                    f'cd ./{str(i).zfill(2)}; srun --mem=4GB --exclusive -N 1 -n 1 python {os.path.dirname(os.path.realpath(__file__))}/minimahopping.py -p "../GAP_2b_soap_iter_{iteration - 1}.xml"{relax_metal} -para -v -t0 {t0}> stdout.log \n')
 
         copyfile(f"{potential_file}", f"{os.getcwd()}/GAP_2b_soap_iter_{iteration - 1}.xml")
 
@@ -1257,7 +1257,7 @@ def Run_parallel_minima_hopping(iteration, submitdir, parallel=40, rerun=False, 
 
             for i in range(40):
                 f.write(
-                    f'cd ./{str(i).zfill(2)}; srun --mem=4GB --exclusive -N 1 -n 1 python {os.path.dirname(os.path.realpath(__file__))}/minimahopping.py -p "../GAP_2b_soap_iter_{iteration}.xml"{relax_metal} -para -v > stdout.log \n')
+                    f'cd ./{str(i).zfill(2)}; srun --mem=4GB --exclusive -N 1 -n 1 python {os.path.dirname(os.path.realpath(__file__))}/minimahopping.py -p "../GAP_2b_soap_iter_{iteration}.xml"{relax_metal} -para -v -t0 {t0} > stdout.log \n')
 
         copyfile(f"{potential_file}", f"{os.getcwd()}/GAP_2b_soap_iter_{iteration}.xml")
 
@@ -1294,4 +1294,5 @@ if __name__ == "__main__":
         randseed=args.randseed,
         parallel=args.parallel,
         maxtemp_scale=args.maxtemp_scale,
+        T0=args.initial_temperature
     )
