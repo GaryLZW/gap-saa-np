@@ -49,6 +49,7 @@ def write_slurm(
             mol_json = str(Path(__file__).parent.resolve()) + "/n3_mol_mod.json",
             code = "aims",
             path_to_workflow=None,
+            t0=2000,
             ):
     """
     This function write slurm submit file for Global optimization
@@ -129,7 +130,7 @@ export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 """
 
     slurm_str += f"""
-python3 {path_to_workflow}/training_gap_iter_n.py -i {iteration} -e {end_iter} -parent {parent_metal} -dop {dopant} -size {size} -conc {one_out_of_n} -gap {path_to_workflow} {universal_soap}{forcemask} {code}  | tee -a stdout.log 
+python3 {path_to_workflow}/training_gap_iter_n.py -i {iteration} -e {end_iter} -parent {parent_metal} -dop {dopant} -size {size} -conc {one_out_of_n} -gap {path_to_workflow} {universal_soap}{forcemask} {code} -t0 {t0}  | tee -a stdout.log 
 """
 
     with open(slurm_file_name, "w") as f:
@@ -223,6 +224,7 @@ if __name__ == "__main__":
             size=args.size,
             one_out_of_n=args.one_out_of_n,
             path_to_workflow=args.gaphelper,
+            t0=args.initial_temperature,
             )	
     if args.submit:
         os.system("sbatch submit.sh")
