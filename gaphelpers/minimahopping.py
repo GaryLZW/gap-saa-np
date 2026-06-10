@@ -258,7 +258,7 @@ def sample_training_set(iteration, submit=True, forcemask=False, collect_job_id=
     #	write(cwd + f"/iter_{iteration}/3_DFT_minhop/new_training_set_iter{iteration}.xyz", new_trainingset, format="extxyz")
     f_name = cwd + f"/iter_{iteration}/3_DFT_minhop"
     Path(f_name).mkdir(parents=True, exist_ok=True)
-    traj = Trajectory(f_name + "/structure.traj", mode="a")
+    traj = Trajectory(f_name + "/structure.traj", mode="w")
     for idx, atoms in enumerate(list(new_trainingset)):
         traj.write(atoms)
     traj.close()
@@ -356,7 +356,7 @@ def prepare_initial_config(parent_metal, dopant, lattice, surface_indices, surfa
         # init_structs.append(opt_adsorption.copy())
     f_name = cwd + "/z_init"
     Path(f_name).mkdir(parents=True, exist_ok=True)
-    traj = Trajectory(f_name + "/structure.traj", mode="a")
+    traj = Trajectory(f_name + "/structure.traj", mode="w")
     for idx, atoms in enumerate(init_structs):
         traj.write(atoms)
     traj.close()
