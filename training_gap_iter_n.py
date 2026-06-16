@@ -144,7 +144,8 @@ for iteration in range(start_iter, end_iter+1):
                   timestep=0.5,
                   relax_metal=args.relaxmetal,
                   **np_params,
-                  lattice_param=lattice_param,)
+                  lattice_param=lattice_param,
+                  T0=args.initial_temperature)
     timing["minhop"] = time.time() - start
 
     # DFT calculation
@@ -204,7 +205,8 @@ for iteration in range(start_iter, end_iter+1):
 # =======================
 # Parallel Minima hopping
 # =======================
-Run_parallel_minima_hopping(iteration, submitdir, lattice_param=lattice_param, relax_metal=args.relaxmetal, **np_params)
+Run_parallel_minima_hopping(iteration, submitdir, lattice_param=lattice_param, relax_metal=args.relaxmetal,
+                            t0=args.initial_temperature, **np_params)
 
 
 
