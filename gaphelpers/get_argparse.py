@@ -149,6 +149,13 @@ def get_argparse():
         help="The initial temperature for the minima hopping."
     )
     parser.add_argument(
+        "-nlayer",
+        "--nlayer",
+        type=int,
+        default=1,
+        help="Number of layers of metals where dopants can substitute."
+    )
+    parser.add_argument(
             "-gap",
             "--gaphelper",
             type=str,

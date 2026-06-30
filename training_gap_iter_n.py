@@ -69,7 +69,9 @@ np_params = {"parent_metal": args.parent,
              "surface_indices": [(1, 1, 1), (1, 1, 0), (1, 0, 0)],
              "surface_energies": [1.447, 1.660, 1.584],
              "size": args.size,
-             "one_out_of_n": args.one_out_of_n}
+             "one_out_of_n": args.one_out_of_n,
+             "nlayer": args.nlayer
+             }
 
 if args.quantum_espresso:
     lattice_param, code = 3.6, "qe"

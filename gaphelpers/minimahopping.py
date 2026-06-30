@@ -326,8 +326,8 @@ def check_slurm_completion(job_ids, timelimit=1200 * 60, sleep=60):
     return True
 
 
-def prepare_initial_config(parent_metal, dopant, lattice, surface_indices, surface_energies, size, one_out_of_n,
-                           peratomsigma=False, forcemask=True, submit=True, lattice_param=3.85, code="aims",
+def prepare_initial_config(parent_metal, dopant, lattice, surface_indices, surface_energies, size, one_out_of_n, nlayer,
+                           peratomsigma=False, forcemask=True, submit=True, lattice_param=3.575, code="aims",
                            free_atom_e=None, path_to_workflow=None):
     """
     When iteration step is 0, then single point DFT result is required.
@@ -343,7 +343,7 @@ def prepare_initial_config(parent_metal, dopant, lattice, surface_indices, surfa
     for i in range(5):
 
         nanoparticle = create_dilute_alloy_np(parent_metal, dopant, lattice, lattice_param, surface_indices,
-                                              surface_energies, size, one_out_of_n, randomseed=i * 50 + 1000)
+                                              surface_energies, size, one_out_of_n, nlayer, randomseed=i * 50 + 1000)
 
         init_structs.append(nanoparticle.copy())
         # Add a minima optimized with MACE-MP-medium
@@ -714,7 +714,7 @@ def apply_constraints(atoms, **kwargs):
     atoms.set_constraint(cons)
 
 
-def get_surface_index(atoms, lattice_constant, set_tag=False):
+def get_surface_index(atoms, lattice_constant, set_tag=False, n_layer=1):
     """
     Get indices for surface atoms of a metal nanoparticle based on maximum radius to centre of mass.
     """
@@ -724,9 +724,21 @@ def get_surface_index(atoms, lattice_constant, set_tag=False):
 
     if set_tag:
         for atom in atoms:
-            atom.tag = 1
+            atom.tag = 2
         for i in surf_index:
-            atoms[i].tag = 0
+            atoms[i].tag = 1
+
+    if n_layer > 1:
+        for i in range(1, n_layer):
+            cutoff -= lattice_constant / 2.0
+            i_layer_index = [atom.index for atom in atoms if (atom.index not in surf_index) and (radius[atom.index] > cutoff)]
+
+            if set_tag:
+                for atom in atoms:
+                    if atom.tag == i+1 and (atom.index not in i_layer_index):
+                        atom.tag = i+2
+
+            surf_index += i_layer_index
 
     return surf_index
 
@@ -739,6 +751,7 @@ def create_dilute_alloy_np(
         surface_energies=[1.447, 1.660, 1.584],
         size=150,
         one_out_of_n=9,
+        nlayer=1,
         randomseed=46867,
 ):
     """
@@ -752,7 +765,7 @@ def create_dilute_alloy_np(
     """
     atoms = wulff_construction(symbol=parent_metal, surfaces=surface_indices, energies=surface_energies,
                                size=size, structure=lattice, latticeconstant=lattice_constant)
-    surf_i = get_surface_index(atoms, lattice_constant, set_tag=True)
+    surf_i = get_surface_index(atoms, lattice_constant, set_tag=True, n_layer=nlayer)
 
     #r_max = np.max([np.linalg.norm(np.asarray([atom.position - atoms.get_center_of_mass()])) for atom in atoms])
     #atoms.set_cell([2 * (r_max + 50),] * 3)
@@ -835,7 +848,7 @@ def create_adsorbate_surface(
     return atoms
 
 
-def prepare_input(parent_metal, dopant, lattice, surface_indices, surface_energies, size, one_out_of_n,
+def prepare_input(parent_metal, dopant, lattice, surface_indices, surface_energies, size, one_out_of_n, nlayer,
                   iteration=None, tmpdir=None, randseed=0, parallel=1, lattice_param=3.85):
     """
     Prepare adsorate + surface structure
@@ -867,28 +880,28 @@ def prepare_input(parent_metal, dopant, lattice, surface_indices, surface_energi
         else:
             if parallel == 1:
                 nanoparticle = create_dilute_alloy_np(parent_metal, dopant, lattice, lattice_param, surface_indices,
-                                                      surface_energies, size, one_out_of_n, randomseed=randseed)
+                                                      surface_energies, size, one_out_of_n, nlayer, randomseed=randseed)
                 add_dummy_cell(nanoparticle)
                 write(tmpdir + f"/iter_{iteration}/2_Minhop/adsorption.traj", nanoparticle)
             else:
                 for i in range(parallel):
                     Path(tmpdir + f"/iter_{iteration}/2_Minhop/{str(i).zfill(2)}").mkdir(parents=True, exist_ok=True)
                     nanoparticle = create_dilute_alloy_np(parent_metal, dopant, lattice, lattice_param, surface_indices,
-                                                          surface_energies, size, one_out_of_n, randomseed=i)
+                                                          surface_energies, size, one_out_of_n, nlayer, randomseed=i)
                     add_dummy_cell(nanoparticle)
                     write(tmpdir + f"/iter_{iteration}/2_Minhop/{str(i).zfill(2)}/adsorption.traj", nanoparticle)
 
     else:
         if parallel == 1:
             nanoparticle = create_dilute_alloy_np(parent_metal, dopant, lattice, lattice_param, surface_indices,
-                                                  surface_energies, size, one_out_of_n, randomseed=randseed)
+                                                  surface_energies, size, one_out_of_n, nlayer, randomseed=randseed)
             add_dummy_cell(nanoparticle)
             write("adsorption.traj", nanoparticle)
         else:
             for i in range(parallel):
                 Path(f"{str(i).zfill(2)}").mkdir(parents=True, exist_ok=True)
                 nanoparticle = create_dilute_alloy_np(parent_metal, dopant, lattice, lattice_param, surface_indices,
-                                                      surface_energies, size, one_out_of_n, randomseed=i)
+                                                      surface_energies, size, one_out_of_n, nlayer, randomseed=i)
                 add_dummy_cell(nanoparticle)
                 write(f"{str(i).zfill(2)}/adsorption.traj", nanoparticle)
 
@@ -1112,6 +1125,7 @@ def minimahopping(
     size = kwargs.get("size", 150)
     one_out_of_n = kwargs.get("one_out_of_n", 9)
     lattice_param = kwargs.get("lattice_param", 3.575)
+    nlayer = kwargs.get("nlayer", 1)
 
     if verbose:
         print("start minima hopping")
@@ -1169,7 +1183,7 @@ def minimahopping(
             print("Minima from minhop are less than 3! Ten more hops are added")
             os.system("rm -f hop.log md* qn* ")
 
-            prepare_input(parent_metal, dopant, lattice, surface_indices, surface_energies, size, one_out_of_n,
+            prepare_input(parent_metal, dopant, lattice, surface_indices, surface_energies, size, one_out_of_n, nlayer,
                           iteration=iteration, tmpdir=tmpdir, randseed=iteration + count + 100,
                           lattice_param=lattice_param)
 
@@ -1221,7 +1235,7 @@ def minimahopping(
 def Run_parallel_minima_hopping(iteration, submitdir, parallel=40, rerun=False, lattice_param=3.85,
                                 relax_metal="", parent_metal="Cu", dopant="Ru", lattice="fcc",
                                 surface_indices=[(1, 1, 1), (1, 1, 0), (1, 0, 0)],
-                                surface_energies=[1.447, 1.660, 1.584], size=150, one_out_of_n=9, t0=2000):
+                                surface_energies=[1.447, 1.660, 1.584], size=150, one_out_of_n=9, nlayer=1, t0=2000):
     if relax_metal:
         relax_metal = " -rm"
     else:
@@ -1232,7 +1246,7 @@ def Run_parallel_minima_hopping(iteration, submitdir, parallel=40, rerun=False, 
         Path(submitdir + f"/a_parallel_minhop").mkdir(parents=True, exist_ok=True)
         os.chdir(submitdir + f"/a_parallel_minhop")
 
-        prepare_input(parent_metal, dopant, lattice, surface_indices, surface_energies, size, one_out_of_n,
+        prepare_input(parent_metal, dopant, lattice, surface_indices, surface_energies, size, one_out_of_n, nlayer,
                       parallel=parallel, lattice_param=lattice_param,)
         potential_file = submitdir + f"/iter_{iteration - 1}/GAP_2b_soap_iter_{iteration - 1}/GAP_2b_soap_iter_{iteration - 1}.xml"
 
@@ -1249,7 +1263,7 @@ def Run_parallel_minima_hopping(iteration, submitdir, parallel=40, rerun=False, 
         Path(submitdir + f"/a_parallel_minhop").mkdir(parents=True, exist_ok=True)
         os.chdir(submitdir + f"/a_parallel_minhop")
 
-        prepare_input(parent_metal, dopant, lattice, surface_indices, surface_energies, size, one_out_of_n,
+        prepare_input(parent_metal, dopant, lattice, surface_indices, surface_energies, size, one_out_of_n, nlayer,
                       parallel=parallel, lattice_param=lattice_param, )
         potential_file = submitdir + f"/iter_{iteration}/GAP_2b_soap_iter_{iteration}/GAP_2b_soap_iter_{iteration}.xml"
 
