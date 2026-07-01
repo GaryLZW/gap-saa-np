@@ -1218,7 +1218,7 @@ def minimahopping(
         print(f"Minima hopping using GAP_2b_soap_iter_{iteration}.xml finished!!")
 
 
-def Run_parallel_minima_hopping(iteration, submitdir, parallel=40, rerun=False, lattice_param=3.85,
+def Run_parallel_minima_hopping(iteration, submitdir, path_to_workflow, parallel=40, rerun=False, lattice_param=3.85,
                                 relax_metal="", parent_metal="Cu", dopant="Ru", lattice="fcc",
                                 surface_indices=[(1, 1, 1), (1, 1, 0), (1, 0, 0)],
                                 surface_energies=[1.447, 1.660, 1.584], size=150, one_out_of_n=9, t0=2000):
@@ -1237,9 +1237,9 @@ def Run_parallel_minima_hopping(iteration, submitdir, parallel=40, rerun=False, 
         potential_file = submitdir + f"/iter_{iteration - 1}/GAP_2b_soap_iter_{iteration - 1}/GAP_2b_soap_iter_{iteration - 1}.xml"
 
         with open("cmd.lst", "w") as f:
-            for i in range(40):
+            for i in range(parallel):
                 f.write(
-                    f'cd ./{str(i).zfill(2)}; srun --mem=4GB --exclusive -N 1 -n 1 python {os.path.dirname(os.path.realpath(__file__))}/minimahopping.py -p "../GAP_2b_soap_iter_{iteration - 1}.xml"{relax_metal} -para -v -t0 {t0}> stdout.log \n')
+                    f'cd ./{str(i).zfill(2)}; srun --mem=4GB --exclusive -N 1 -n 1 python {os.path.dirname(os.path.realpath(__file__))}/minimahopping.py -p "../GAP_2b_soap_iter_{iteration - 1}.xml"{relax_metal} -para -v -t0 {t0} > stdout.log \n')
 
         copyfile(f"{potential_file}", f"{os.getcwd()}/GAP_2b_soap_iter_{iteration - 1}.xml")
 
@@ -1255,7 +1255,7 @@ def Run_parallel_minima_hopping(iteration, submitdir, parallel=40, rerun=False, 
 
         with open("cmd.lst", "w") as f:
 
-            for i in range(40):
+            for i in range(parallel):
                 f.write(
                     f'cd ./{str(i).zfill(2)}; srun --mem=4GB --exclusive -N 1 -n 1 python {os.path.dirname(os.path.realpath(__file__))}/minimahopping.py -p "../GAP_2b_soap_iter_{iteration}.xml"{relax_metal} -para -v -t0 {t0} > stdout.log \n')
 
@@ -1269,7 +1269,10 @@ def Run_parallel_minima_hopping(iteration, submitdir, parallel=40, rerun=False, 
     #                                               adsorbate_file=adsorbate_file)
     # else:
     #     idx, formula, smiles = get_adsorbate_info(smiles)
-    os.system(f'sed -i "5s/.*/#SBATCH -J Minhop_M{size}_{dopant}{parent_metal}/" GNUparallel.sh')
+    os.system(f'sed -i "/^#SBATCH -J/s/.*/#SBATCH -J Minhop_M{size}_{dopant}{parent_metal}/" GNUparallel.sh')
+    os.system(f'sed -i "/^#SBATCH --ntasks/s/.*/#SBATCH --ntasks={parallel}" GNUparallel.sh')
+    os.system(f'sed -i "/^#SBATCH --mem/s/.*/#SBATCH --mem={4500*parallel}M" GNUparallel.sh')
+    os.system(f'sed -i "/^export PYTHONPATH/s/.*/export PYTHONPATH={path_to_workflow}:$PYTHONPATH" GNUparallel.sh')
     job_ids = os.popen("sbatch GNUparallel.sh").read().strip().split()[-1:]
 
     if check_slurm_completion(job_ids, timelimit=300 * 60, sleep=30):
