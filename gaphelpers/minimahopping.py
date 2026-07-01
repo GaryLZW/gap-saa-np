@@ -1270,9 +1270,9 @@ def Run_parallel_minima_hopping(iteration, submitdir, path_to_workflow, parallel
     # else:
     #     idx, formula, smiles = get_adsorbate_info(smiles)
     os.system(f'sed -i "/^#SBATCH -J/s/.*/#SBATCH -J Minhop_M{size}_{dopant}{parent_metal}/" GNUparallel.sh')
-    os.system(f'sed -i "/^#SBATCH --ntasks/s/.*/#SBATCH --ntasks={parallel}" GNUparallel.sh')
-    os.system(f'sed -i "/^#SBATCH --mem/s/.*/#SBATCH --mem={4500*parallel}M" GNUparallel.sh')
-    os.system(f'sed -i "/^export PYTHONPATH/s/.*/export PYTHONPATH={path_to_workflow}:$PYTHONPATH" GNUparallel.sh')
+    os.system(f'sed -i "/^#SBATCH --ntasks=40/s/.*/#SBATCH --ntasks={parallel}/" GNUparallel.sh')
+    os.system(f'sed -i "/^#SBATCH --mem=180000M/s/.*/#SBATCH --mem={4500*parallel}M/" GNUparallel.sh')
+    os.system(f'sed -i "/^export PYTHONPATH=/s/.*/export PYTHONPATH={path_to_workflow}:$PYTHONPATH/" GNUparallel.sh')
     job_ids = os.popen("sbatch GNUparallel.sh").read().strip().split()[-1:]
 
     if check_slurm_completion(job_ids, timelimit=300 * 60, sleep=30):
