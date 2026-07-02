@@ -205,7 +205,7 @@ for iteration in range(start_iter, end_iter+1):
 # =======================
 # Parallel Minima hopping
 # =======================
-Run_parallel_minima_hopping(iteration, submitdir, path_to_workflow=args.gaphelper, parallel=192,
+Run_parallel_minima_hopping(iteration, submitdir, path_to_workflow=args.gaphelper, parallel=180,
                             lattice_param=lattice_param, relax_metal=args.relaxmetal,
                             t0=args.initial_temperature, **np_params)
 
