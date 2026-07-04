@@ -1130,7 +1130,7 @@ def minimahopping(
         print("start reading potential file")
 
     # Set Calculator/ Potential
-    if not parallel or iteration < 2 or statistics[iteration - 1]["RMSD_F_val"] > 3:  # eV/AA
+    if not parallel and iteration < 2 or statistics[iteration - 1]["RMSD_F_val"] > 3:  # eV/AA
         calc = mace_mp(model="medium", dispersion=False, default_dtype="float64", device='cpu')
         atoms.calc = calc
         if verbose:
