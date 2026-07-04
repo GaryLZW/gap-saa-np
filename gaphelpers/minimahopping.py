@@ -1239,7 +1239,7 @@ def Run_parallel_minima_hopping(iteration, submitdir, path_to_workflow, parallel
         with open("cmd.lst", "w") as f:
             for i in range(parallel):
                 f.write(
-                    f'cd ./{str(i).zfill(2)}; srun --mem=4GB --exclusive -N 1 -n 1 python {os.path.dirname(os.path.realpath(__file__))}/minimahopping.py -p "../GAP_2b_soap_iter_{iteration - 1}.xml"{relax_metal} -para -v -t0 {t0} > stdout.log \n')
+                    f'cd ./{str(i).zfill(3)}; srun --mem=4GB --exclusive -N 1 -n 1 python {os.path.dirname(os.path.realpath(__file__))}/minimahopping.py -p "../GAP_2b_soap_iter_{iteration - 1}.xml"{relax_metal} -para -v -t0 {t0} > stdout.log \n')
 
         copyfile(f"{potential_file}", f"{os.getcwd()}/GAP_2b_soap_iter_{iteration - 1}.xml")
 
@@ -1257,7 +1257,7 @@ def Run_parallel_minima_hopping(iteration, submitdir, path_to_workflow, parallel
 
             for i in range(parallel):
                 f.write(
-                    f'cd ./{str(i).zfill(2)}; srun --mem=4GB --exclusive -N 1 -n 1 python {os.path.dirname(os.path.realpath(__file__))}/minimahopping.py -p "../GAP_2b_soap_iter_{iteration}.xml"{relax_metal} -para -v -t0 {t0} > stdout.log \n')
+                    f'cd ./{str(i).zfill(3)}; srun --mem=4GB --exclusive -N 1 -n 1 python {os.path.dirname(os.path.realpath(__file__))}/minimahopping.py -p "../GAP_2b_soap_iter_{iteration}.xml"{relax_metal} -para -v -t0 {t0} > stdout.log \n')
 
         copyfile(f"{potential_file}", f"{os.getcwd()}/GAP_2b_soap_iter_{iteration}.xml")
 
