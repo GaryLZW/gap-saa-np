@@ -886,11 +886,11 @@ def prepare_input(parent_metal, dopant, lattice, surface_indices, surface_energi
             write("adsorption.traj", nanoparticle)
         else:
             for i in range(parallel):
-                Path(f"{str(i).zfill(2)}").mkdir(parents=True, exist_ok=True)
+                Path(f"{str(i).zfill(3)}").mkdir(parents=True, exist_ok=True)
                 nanoparticle = create_dilute_alloy_np(parent_metal, dopant, lattice, lattice_param, surface_indices,
                                                       surface_energies, size, one_out_of_n, randomseed=i)
                 add_dummy_cell(nanoparticle)
-                write(f"{str(i).zfill(2)}/adsorption.traj", nanoparticle)
+                write(f"{str(i).zfill(3)}/adsorption.traj", nanoparticle)
 
 
 def check_GAP_convergence(statistics,
