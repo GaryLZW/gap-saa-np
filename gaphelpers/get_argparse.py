@@ -161,6 +161,13 @@ def get_argparse():
             type=str,
             help="Path to gaphelper code"
     )
+    #TO DO: remove hard-coded environment paths.
+    parser.add_argument(
+        "-venv",
+        "--virtual_env",
+        type=str,
+        help="Path to gaphelper code"
+    )
 
     args = parser.parse_args()
 
