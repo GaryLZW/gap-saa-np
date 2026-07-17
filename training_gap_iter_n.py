@@ -216,7 +216,7 @@ Run_parallel_minima_hopping(iteration, submitdir, path_to_workflow=args.gaphelpe
 # ===============
 
 # Check GAP convergence; collect minima with kPCA and k-means clustering
-if not check_GAP_convergence_after_parallel_MH(submitdir, code=code,
+if not check_GAP_convergence_after_parallel_MH(iteration, submitdir, code=code,
                                                free_atom_e=isolated_atom_energy, path_to_workflow=args.gaphelper):
     print(f"Error for selected five minima is too high. ")
 #
