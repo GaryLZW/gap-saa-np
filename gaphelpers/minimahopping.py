@@ -886,11 +886,11 @@ def prepare_input(parent_metal, dopant, lattice, surface_indices, surface_energi
             write("adsorption.traj", nanoparticle)
         else:
             for i in range(parallel):
-                Path(f"{str(i).zfill(2)}").mkdir(parents=True, exist_ok=True)
+                Path(f"{str(i).zfill(3)}").mkdir(parents=True, exist_ok=True)
                 nanoparticle = create_dilute_alloy_np(parent_metal, dopant, lattice, lattice_param, surface_indices,
                                                       surface_energies, size, one_out_of_n, randomseed=i)
                 add_dummy_cell(nanoparticle)
-                write(f"{str(i).zfill(2)}/adsorption.traj", nanoparticle)
+                write(f"{str(i).zfill(3)}/adsorption.traj", nanoparticle)
 
 
 def check_GAP_convergence(statistics,
@@ -1130,16 +1130,25 @@ def minimahopping(
         print("start reading potential file")
 
     # Set Calculator/ Potential
-    if iteration < 2 or statistics[iteration - 1]["RMSD_F_val"] > 3:  # eV/AA
-        calc = mace_mp(model="medium", dispersion=False, default_dtype="float64", device='cpu')
-        atoms.calc = calc
-        if verbose:
-            print("Low accuracy! Use mace as calculator to insure stability.")
+    if not parallel:
+
+        if iteration < 2 or statistics[iteration - 1]["RMSD_F_val"] > 3:  # eV/AA
+            calc = mace_mp(model="medium", dispersion=False, default_dtype="float64", device='cpu')
+            atoms.calc = calc
+            if verbose:
+                print("Low accuracy! Use mace as calculator to insure stability.")
+        else:
+            pot = Potential(param_filename=potential_file)
+            atoms.calc = pot
+            if verbose:
+                print("potential file has been read!")
     else:
+        
         pot = Potential(param_filename=potential_file)
         atoms.calc = pot
         if verbose:
-            print("potential file has been read!")
+                print("potential file has been read!")
+
 
     # Minima Hopping
     if not parallel:
@@ -1239,7 +1248,7 @@ def Run_parallel_minima_hopping(iteration, submitdir, path_to_workflow, parallel
         with open("cmd.lst", "w") as f:
             for i in range(parallel):
                 f.write(
-                    f'cd ./{str(i).zfill(2)}; srun --mem=4GB --exclusive -N 1 -n 1 python {os.path.dirname(os.path.realpath(__file__))}/minimahopping.py -p "../GAP_2b_soap_iter_{iteration - 1}.xml"{relax_metal} -para -v -t0 {t0} > stdout.log \n')
+                    f'cd ./{str(i).zfill(3)}; srun --mem=4GB --exclusive -N 1 -n 1 python {os.path.dirname(os.path.realpath(__file__))}/minimahopping.py -p "../GAP_2b_soap_iter_{iteration - 1}.xml"{relax_metal} -para -v -t0 {t0} > stdout.log \n')
 
         copyfile(f"{potential_file}", f"{os.getcwd()}/GAP_2b_soap_iter_{iteration - 1}.xml")
 
@@ -1257,7 +1266,7 @@ def Run_parallel_minima_hopping(iteration, submitdir, path_to_workflow, parallel
 
             for i in range(parallel):
                 f.write(
-                    f'cd ./{str(i).zfill(2)}; srun --mem=4GB --exclusive -N 1 -n 1 python {os.path.dirname(os.path.realpath(__file__))}/minimahopping.py -p "../GAP_2b_soap_iter_{iteration}.xml"{relax_metal} -para -v -t0 {t0} > stdout.log \n')
+                    f'cd ./{str(i).zfill(3)}; srun --mem=4GB --exclusive -N 1 -n 1 python {os.path.dirname(os.path.realpath(__file__))}/minimahopping.py -p "../GAP_2b_soap_iter_{iteration}.xml"{relax_metal} -para -v -t0 {t0} > stdout.log \n')
 
         copyfile(f"{potential_file}", f"{os.getcwd()}/GAP_2b_soap_iter_{iteration}.xml")
 
